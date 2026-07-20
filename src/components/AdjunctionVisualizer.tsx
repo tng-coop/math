@@ -25,7 +25,7 @@ interface SpokenWord {
 
 let activeUtteranceRef: SpeechSynthesisUtterance | null = null;
 
-export default function AdjunctionVisualizer({ language }: { language: 'en' | 'ja' }) {
+export default function AdjunctionVisualizer({ language, forcedRoom }: { language: 'en' | 'ja', forcedRoom?: number }) {
   const getInitialRoom = (): number => {
     if (typeof window !== 'undefined') {
       const params = new URLSearchParams(window.location.search);
@@ -35,10 +35,12 @@ export default function AdjunctionVisualizer({ language }: { language: 'en' | 'j
     return 1;
   };
 
-  const [currentStop, setCurrentStop] = useState<number>(getInitialRoom);
+  const [currentStopState, setCurrentStop] = useState<number>(getInitialRoom);
+  const currentStop = forcedRoom !== undefined ? forcedRoom : currentStopState;
 
   // Synchronize room state with URL query parameter
   useEffect(() => {
+    if (forcedRoom !== undefined) return;
     if (typeof window !== 'undefined') {
       const params = new URLSearchParams(window.location.search);
       if (params.get('room') !== currentStop.toString()) {
@@ -47,7 +49,7 @@ export default function AdjunctionVisualizer({ language }: { language: 'en' | 'j
         window.history.replaceState({}, '', newUrl);
       }
     }
-  }, [currentStop]);
+  }, [currentStop, forcedRoom]);
 
   const [setElements, setSetElements] = useState<ElementNode[]>([
     { id: '1', label: 'I' },
@@ -539,27 +541,29 @@ export default function AdjunctionVisualizer({ language }: { language: 'en' | 'j
     <div className="visualizer-container animate-pop-in">
       
       {/* Prominent Segmented Room Navigation Dashboard */}
-      <nav className="room-nav-tabs">
-        {[1, 2, 3, 4, 5, 6].map((num) => {
-          const roman = ['I', 'II', 'III', 'IV', 'V', 'VI'][num - 1];
-          const isActive = currentStop === num;
-          return (
-            <button
-              key={num}
-              onClick={() => setCurrentStop(num)}
-              className={`room-tab-btn ${isActive ? 'active' : ''}`}
-            >
-              <span className="room-tab-num">{roman}</span>
-              <span className="room-tab-title">
-                {language === 'en' 
-                  ? ['Entrance', 'Counting', 'Language', 'Algorithms', 'Categories', 'Adjunction'][num - 1]
-                  : ['入口', '数え上げ', '言語', '計算機', '定式化', '随伴'][num - 1]
-                }
-              </span>
-            </button>
-          );
-        })}
-      </nav>
+      {forcedRoom === undefined && (
+        <nav className="room-nav-tabs">
+          {[1, 2, 3, 4, 5, 6].map((num) => {
+            const roman = ['I', 'II', 'III', 'IV', 'V', 'VI'][num - 1];
+            const isActive = currentStop === num;
+            return (
+              <button
+                key={num}
+                onClick={() => setCurrentStop(num)}
+                className={`room-tab-btn ${isActive ? 'active' : ''}`}
+              >
+                <span className="room-tab-num">{roman}</span>
+                <span className="room-tab-title">
+                  {language === 'en' 
+                    ? ['Entrance', 'Counting', 'Language', 'Algorithms', 'Categories', 'Adjunction'][num - 1]
+                    : ['入口', '数え上げ', '言語', '計算機', '定式化', '随伴'][num - 1]
+                  }
+                </span>
+              </button>
+            );
+          })}
+        </nav>
+      )}
 
       {/* Museum Guide Nav Controller (Audio Guide Device Mock-up) */}
       <div className="audio-guide-player">

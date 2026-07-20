@@ -18,7 +18,7 @@ let activeUtteranceRef: SpeechSynthesisUtterance | null = null;
 // Types for objects, elements and morphisms
 type CatObject = 'A' | 'B' | 'C';
 
-export default function Hall10Visualizer({ language }: { language: 'en' | 'ja' }) {
+export default function Hall10Visualizer({ language, forcedRoom }: { language: 'en' | 'ja', forcedRoom?: number }) {
   // Tour stop state: room 1 to 5
   const getInitialRoom = (): number => {
     if (typeof window !== 'undefined') {
@@ -29,10 +29,12 @@ export default function Hall10Visualizer({ language }: { language: 'en' | 'ja' }
     return 1;
   };
 
-  const [currentStop, setCurrentStop] = useState<number>(getInitialRoom);
+  const [currentStopState, setCurrentStop] = useState<number>(getInitialRoom);
+  const currentStop = forcedRoom !== undefined ? forcedRoom : currentStopState;
 
   // Synchronize room state with URL query parameter
   useEffect(() => {
+    if (forcedRoom !== undefined) return;
     if (typeof window !== 'undefined') {
       const params = new URLSearchParams(window.location.search);
       if (params.get('room') !== currentStop.toString()) {
@@ -41,7 +43,7 @@ export default function Hall10Visualizer({ language }: { language: 'en' | 'ja' }
         window.history.replaceState({}, '', newUrl);
       }
     }
-  }, [currentStop]);
+  }, [currentStop, forcedRoom]);
 
   // Yoneda state
   const [representingObj, setRepresentingObj] = useState<CatObject>('A');
@@ -454,27 +456,29 @@ export default function Hall10Visualizer({ language }: { language: 'en' | 'ja' }
   return (
     <div className="visualizer-container animate-pop-in" style={{ height: '100%', width: '100%' }}>
       {/* Exhibit Header / Room Tabs */}
-      <nav className="room-nav-tabs">
-        {Array.from({ length: 5 }, (_, i) => i + 1).map((num) => {
-          const isActive = currentStop === num;
-          const roman = getRoman(num);
-          return (
-            <button
-              key={num}
-              onClick={() => setCurrentStop(num)}
-              className={`room-tab-btn ${isActive ? 'active' : ''}`}
-            >
-              <span className="room-tab-num">{roman}</span>
-              <span className="room-tab-title">
-                {language === 'en' 
-                  ? ['Relational C', 'Hom-Sets (h_A)', 'Target Functor X', 'Yoneda Bijection', 'Naturality Square'][num - 1]
-                  : ['関係性の圏 C', 'Hom集合 (h_A)', '対象関手 X', '米田の同型', '自然性の可換性'][num - 1]
-                }
-              </span>
-            </button>
-          );
-        })}
-      </nav>
+      {forcedRoom === undefined && (
+        <nav className="room-nav-tabs">
+          {Array.from({ length: 5 }, (_, i) => i + 1).map((num) => {
+            const isActive = currentStop === num;
+            const roman = getRoman(num);
+            return (
+              <button
+                key={num}
+                onClick={() => setCurrentStop(num)}
+                className={`room-tab-btn ${isActive ? 'active' : ''}`}
+              >
+                <span className="room-tab-num">{roman}</span>
+                <span className="room-tab-title">
+                  {language === 'en' 
+                    ? ['Relational C', 'Hom-Sets (h_A)', 'Target Functor X', 'Yoneda Injection', 'Naturality Square'][num - 1]
+                    : ['関係性の圏 C', 'Hom集合 (h_A)', '対象関手 X', '米田の同型', '自然性の可換性'][num - 1]
+                  }
+                </span>
+              </button>
+            );
+          })}
+        </nav>
+      )}
 
       {/* Audio Guide Device Widget */}
       <div className="audio-guide-player">

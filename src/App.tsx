@@ -17,9 +17,9 @@ export default function App() {
   const getInitialExhibit = (): string => {
     if (typeof window !== 'undefined') {
       const params = new URLSearchParams(window.location.search);
-      return params.get('exhibit') || '3'; // Default to Hall 3 Quotient Topology
+      return params.get('exhibit') || '1'; // Default to Hall 1 Entrance
     }
-    return '3';
+    return '1';
   };
 
   const [language, setLanguageState] = useState<'en' | 'ja'>(getInitialLanguage);
@@ -48,27 +48,51 @@ export default function App() {
   const getExhibitTitle = () => {
     if (language === 'en') {
       switch (exhibit) {
+        case '1':
+          return 'EXHIBIT #01: THE ONTOLOGICAL CYCLE (MUSEUM ENTRANCE)';
+        case '2':
+          return 'EXHIBIT #02: DISCRETE TALLIES (PEBBLES & BONE NOTCHES)';
         case '3':
           return 'EXHIBIT #03: QUOTIENT TOPOLOGY (TORUS FOLDING)';
+        case '4':
+          return 'EXHIBIT #04: LANGUAGE & GRAMMAR (SEMANTIC SYNONYMY)';
         case '5':
-          return 'EXHIBIT #05: ALGEBRAIC EVALUATION (AST REDUCTION)';
+          return 'EXHIBIT #05: COMPUTATION ALGORITHMS (AST EVALUATION)';
+        case '6':
+          return 'EXHIBIT #06: CATEGORY OF SETS (THE RAW MATERIALS)';
         case '7':
-          return 'EXHIBIT #07: ONTOLOGY (FREE GENERATION & COLLAPSE)';
+          return 'EXHIBIT #07: ADJUNCTION DUALITY (FREE FUNCTOR F ⊣ U)';
+        case '8':
+          return 'EXHIBIT #08: EXISTENCE AS RELATION (YONEDA PRELUDE)';
+        case '9':
+          return 'EXHIBIT #09: REPRESENTABLE FUNCTOR HOM(A, -)';
         case '10':
         default:
-          return 'EXHIBIT #10: THE YONEDA LEMMA (EXISTENCE AS RELATION)';
+          return 'EXHIBIT #10: THE YONEDA LEMMA (NATURAL ISOMORPHISM)';
       }
     } else {
       switch (exhibit) {
+        case '1':
+          return '展示 #01：存在論的サイクル（美術館入口）';
+        case '2':
+          return '展示 #02：離散的数え上げ（小石と骨の刻み目）';
         case '3':
           return '展示 #03：商位相（トーラス境界接着）';
+        case '4':
+          return '展示 #04：言語と文法（同義語の商化）';
         case '5':
           return '展示 #05：代数的評価（AST簡約）';
+        case '6':
+          return '展示 #06：集合の圏（構造のない生の素材）';
         case '7':
-          return '展示 #07：存在論的サイクル（自由生成と崩壊）';
+          return '展示 #07：随伴の双対性（自由関手 F ⊣ U）';
+        case '8':
+          return '展示 #08：関係性としての存在（米田の補題導入）';
+        case '9':
+          return '展示 #09：表現可能関手 Hom(A, -)';
         case '10':
         default:
-          return '展示 #10：米田の補題（関係性としての存在）';
+          return '展示 #10：米田の補題（自然同型と可換性）';
       }
     }
   };
@@ -85,35 +109,17 @@ export default function App() {
         </div>
 
         {/* Exhibit Selector Navigation */}
-        <div style={{ display: 'flex', gap: '0.4rem', alignItems: 'center' }}>
-          <button 
-            onClick={() => setExhibit('3')} 
-            className={`btn-lang ${exhibit === '3' ? 'active' : ''}`}
-            style={{ fontSize: '0.725rem', padding: '4px 10px' }}
-          >
-            EXHIBIT 03
-          </button>
-          <button 
-            onClick={() => setExhibit('5')} 
-            className={`btn-lang ${exhibit === '5' ? 'active' : ''}`}
-            style={{ fontSize: '0.725rem', padding: '4px 10px' }}
-          >
-            EXHIBIT 05
-          </button>
-          <button 
-            onClick={() => setExhibit('7')} 
-            className={`btn-lang ${exhibit === '7' ? 'active' : ''}`}
-            style={{ fontSize: '0.725rem', padding: '4px 10px' }}
-          >
-            EXHIBIT 07
-          </button>
-          <button 
-            onClick={() => setExhibit('10')} 
-            className={`btn-lang ${exhibit === '10' ? 'active' : ''}`}
-            style={{ fontSize: '0.725rem', padding: '4px 10px' }}
-          >
-            EXHIBIT 10
-          </button>
+        <div className="exhibit-selector-scroll" style={{ display: 'flex', gap: '0.3rem', alignItems: 'center', overflowX: 'auto', maxWidth: '65%' }}>
+          {['1', '2', '3', '4', '5', '6', '7', '8', '9', '10'].map((num) => (
+            <button
+              key={num}
+              onClick={() => setExhibit(num)}
+              className={`btn-lang ${exhibit === num ? 'active' : ''}`}
+              style={{ fontSize: '0.625rem', padding: '3px 7px', minWidth: '46px', textAlign: 'center' }}
+            >
+              {num.padStart(2, '0')}
+            </button>
+          ))}
         </div>
 
         {/* Bilingual Language Switch Pill */}
@@ -136,10 +142,16 @@ export default function App() {
 
       {/* Immersive Exhibit Room */}
       <main className="museum-main-viewport">
-        {exhibit === '3' && <Hall3Visualizer language={language} />}
-        {exhibit === '5' && <Hall5Visualizer language={language} />}
-        {exhibit === '7' && <AdjunctionVisualizer language={language} />}
-        {exhibit === '10' && <Hall10Visualizer language={language} />}
+        {exhibit === '1' && <AdjunctionVisualizer language={language} forcedRoom={1} />}
+        {exhibit === '2' && <AdjunctionVisualizer language={language} forcedRoom={2} />}
+        {exhibit === '3' && <Hall3Visualizer language={language} onlyVisualizer={false} />}
+        {exhibit === '4' && <AdjunctionVisualizer language={language} forcedRoom={3} />}
+        {exhibit === '5' && <Hall5Visualizer language={language} onlyVisualizer={false} />}
+        {exhibit === '6' && <AdjunctionVisualizer language={language} forcedRoom={5} />}
+        {exhibit === '7' && <AdjunctionVisualizer language={language} forcedRoom={6} />}
+        {exhibit === '8' && <Hall10Visualizer language={language} forcedRoom={1} />}
+        {exhibit === '9' && <Hall10Visualizer language={language} forcedRoom={2} />}
+        {exhibit === '10' && <Hall10Visualizer language={language} forcedRoom={4} />}
       </main>
     </div>
   );

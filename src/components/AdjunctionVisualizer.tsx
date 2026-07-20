@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { 
-  ArrowRight, Layers, 
-  CheckCircle2, Volume2, VolumeX, ChevronLeft, ChevronRight, BookOpen 
+  ArrowRight, Layers, CheckCircle2, BookOpen,
+  Play, Pause, Square, SkipBack, SkipForward, FastForward, Rewind,
+  ChevronRight
 } from 'lucide-react';
 
 interface ElementNode {
@@ -34,11 +35,13 @@ export default function AdjunctionVisualizer({ language }: { language: 'en' | 'j
   const [counitInput, setCounitInput] = useState<string>('I-I-I');
   const [counitResult, setCounitResult] = useState<string | null>(null);
 
-  // Text-to-Speech (TTS) state
+  // Text-to-Speech (TTS) states
   const [activeSpeechText, setActiveSpeechText] = useState<string | null>(null);
   const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
   const [selectedVoiceName, setSelectedVoiceName] = useState<string>('');
   const [currentCharIndex, setCurrentCharIndex] = useState<number>(-1);
+  const [speedMultiplier, setSpeedMultiplier] = useState<number>(1.0);
+  const [isPaused, setIsPaused] = useState<boolean>(false);
 
   // Load voices dynamically based on active language selection
   useEffect(() => {
@@ -105,12 +108,16 @@ export default function AdjunctionVisualizer({ language }: { language: 'en' | 'j
 
   // Stop speech when current stop or language changes
   useEffect(() => {
-    if ('speechSynthesis' in window) {
-      window.speechSynthesis.cancel();
-      setActiveSpeechText(null);
-      setCurrentCharIndex(-1);
-    }
+    stopSpeechComplete();
   }, [currentStop, language]);
+
+  // Hot-reload speed multiplier mid-speech
+  useEffect(() => {
+    if (activeSpeechText) {
+      const activeIdx = currentCharIndex >= 0 ? currentCharIndex : 0;
+      startSpeech(activeSpeechText, activeIdx);
+    }
+  }, [speedMultiplier]);
 
   useEffect(() => {
     return () => {
@@ -120,47 +127,106 @@ export default function AdjunctionVisualizer({ language }: { language: 'en' | 'j
     };
   }, []);
 
-  const speakCurrentStop = (text: string) => {
+  const stopSpeechComplete = () => {
     if ('speechSynthesis' in window) {
-      if (activeSpeechText === text) {
-        window.speechSynthesis.cancel();
-        setActiveSpeechText(null);
-        setCurrentCharIndex(-1);
-      } else {
-        window.speechSynthesis.cancel();
-        const cleanText = text.replace(/[\$\{\}\[\]\(\)⊣→≅↦]/g, ' '); 
-        const utterance = new SpeechSynthesisUtterance(cleanText);
-        
-        const voice = voices.find(v => v.name === selectedVoiceName);
-        if (voice) {
-          utterance.voice = voice;
+      window.speechSynthesis.cancel();
+    }
+    setActiveSpeechText(null);
+    setCurrentCharIndex(-1);
+    setIsPaused(false);
+  };
+
+  const startSpeech = (text: string, startIndex: number) => {
+    if (!('speechSynthesis' in window)) return;
+    window.speechSynthesis.cancel();
+    
+    const sliceText = text.substring(startIndex);
+    if (!sliceText.trim()) {
+      stopSpeechComplete();
+      return;
+    }
+
+    const cleanText = sliceText.replace(/[\$\{\}\[\]\(\)⊣→≅↦]/g, ' '); 
+    const utterance = new SpeechSynthesisUtterance(cleanText);
+    
+    const voice = voices.find(v => v.name === selectedVoiceName);
+    if (voice) {
+      utterance.voice = voice;
+    }
+
+    const baseRate = language === 'ja' ? 0.95 : 0.92;
+    utterance.rate = baseRate * speedMultiplier;
+    utterance.pitch = 1.0;
+
+    utterance.onboundary = (event) => {
+      if (event.name === 'word') {
+        setCurrentCharIndex(startIndex + event.charIndex);
+      }
+    };
+
+    utterance.onend = () => {
+      // If speaking state went false, it finished naturally
+      setTimeout(() => {
+        if (!window.speechSynthesis.speaking && !window.speechSynthesis.pending) {
+          stopSpeechComplete();
         }
+      }, 60);
+    };
 
-        utterance.rate = language === 'ja' ? 0.95 : 0.92;
-        utterance.pitch = 1.0;
+    utterance.onerror = () => {
+      stopSpeechComplete();
+    };
 
-        utterance.onboundary = (event) => {
-          if (event.name === 'word') {
-            setCurrentCharIndex(event.charIndex);
-          }
-        };
+    window.speechSynthesis.speak(utterance);
+    setActiveSpeechText(text);
+    setIsPaused(false);
+    setCurrentCharIndex(startIndex);
+  };
 
-        utterance.onend = () => {
-          setActiveSpeechText(null);
-          setCurrentCharIndex(-1);
-        };
-        utterance.onerror = () => {
-          setActiveSpeechText(null);
-          setCurrentCharIndex(-1);
-        };
+  const speakCurrentStop = (text: string) => {
+    if (!('speechSynthesis' in window)) return;
 
-        window.speechSynthesis.speak(utterance);
-        setActiveSpeechText(text);
-        setCurrentCharIndex(0); 
+    if (activeSpeechText === text) {
+      // Toggle play / pause state
+      if (isPaused) {
+        window.speechSynthesis.resume();
+        setIsPaused(false);
+      } else {
+        window.speechSynthesis.pause();
+        setIsPaused(true);
       }
     } else {
-      alert("Text-to-speech is not supported in this browser.");
+      startSpeech(text, 0);
     }
+  };
+
+  const handleSeek = (direction: 'fwd' | 'rwd') => {
+    if (!activeSpeechText) return;
+    const words = getSpokenWords(activeSpeechText, language);
+    if (words.length === 0) return;
+
+    // Locate active word index
+    let currentWordIdx = words.findIndex(
+      w => currentCharIndex >= w.start && currentCharIndex <= w.end
+    );
+    if (currentWordIdx === -1) {
+      currentWordIdx = words.findIndex(w => w.start > currentCharIndex);
+      if (currentWordIdx === -1) currentWordIdx = words.length - 1;
+    }
+
+    const wordSkip = 4; // Word seek step size
+    let targetWordIdx = direction === 'fwd' 
+      ? Math.min(words.length - 1, currentWordIdx + wordSkip) 
+      : Math.max(0, currentWordIdx - wordSkip);
+
+    const targetWord = words[targetWordIdx];
+    startSpeech(activeSpeechText, targetWord.start);
+  };
+
+  const cycleSpeed = () => {
+    const speeds = [1.0, 1.25, 1.5, 2.0];
+    const nextIdx = (speeds.indexOf(speedMultiplier) + 1) % speeds.length;
+    setSpeedMultiplier(speeds[nextIdx]);
   };
 
   const addElement = () => {
@@ -188,11 +254,7 @@ export default function AdjunctionVisualizer({ language }: { language: 'en' | 'j
     setMonoidWords([]);
     setAnimationState('idle');
     setCounitResult(null);
-    if ('speechSynthesis' in window) {
-      window.speechSynthesis.cancel();
-      setActiveSpeechText(null);
-      setCurrentCharIndex(-1);
-    }
+    stopSpeechComplete();
   };
 
   // Functor F: Free Generation
@@ -416,22 +478,22 @@ export default function AdjunctionVisualizer({ language }: { language: 'en' | 'j
             {currentStop}
           </div>
           <div className="device-meta">
-            <h4>{language === 'en' ? 'Ontology Audio Guide' : '存在論音声ガイド'}</h4>
+            <h4>{language === 'en' ? 'Ontology Audio Player' : '存在論オーディオプレーヤー'}</h4>
             <p>{language === 'en' ? `Station ${currentStop} of ${tourStops.length}` : `ステーション ${currentStop} / ${tourStops.length}`}</p>
           </div>
         </div>
 
-        {/* Dynamic Voice Selection & Playback Controls */}
-        <div className="audio-controls-group">
+        {/* Dynamic Voice Selection */}
+        <div className="audio-controls-group" style={{ gap: '0.75rem' }}>
           {voices.length > 0 && (
             <select
               value={selectedVoiceName}
               onChange={(e) => setSelectedVoiceName(e.target.value)}
               className="input-text"
               style={{ 
-                width: '130px', 
-                fontSize: '0.65rem', 
-                padding: '2px 6px', 
+                width: '100px', 
+                fontSize: '0.6rem', 
+                padding: '1px 4px', 
                 height: '24px', 
                 background: 'rgba(0,0,0,0.5)',
                 border: '1px solid rgba(212,175,55,0.3)',
@@ -448,46 +510,92 @@ export default function AdjunctionVisualizer({ language }: { language: 'en' | 'j
             </select>
           )}
 
-          <div className="audio-wave">
-            <div className={`wave-bar ${isSpeaking ? 'active' : ''}`} />
-            <div className={`wave-bar ${isSpeaking ? 'active' : ''}`} />
-            <div className={`wave-bar ${isSpeaking ? 'active' : ''}`} />
-            <div className={`wave-bar ${isSpeaking ? 'active' : ''}`} />
-            <div className={`wave-bar ${isSpeaking ? 'active' : ''}`} />
+          {/* Speed Selector Pill */}
+          <button 
+            onClick={cycleSpeed}
+            className="btn btn-outline"
+            style={{ 
+              fontSize: '0.65rem', 
+              padding: '2px 8px', 
+              height: '24px', 
+              borderColor: 'rgba(212, 175, 55, 0.4)', 
+              color: 'var(--primary)',
+              minWidth: '45px'
+            }}
+            title={language === 'en' ? 'Playback Speed' : '再生速度'}
+          >
+            {speedMultiplier.toFixed(2)}x
+          </button>
+
+          {/* Player controls */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+            {/* Skip Prev Room */}
+            <button
+              onClick={prevStop}
+              disabled={currentStop === 1}
+              className="btn btn-outline"
+              style={{ width: '24px', height: '24px', padding: '0', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+              title={language === 'en' ? 'Previous Stop' : '前のスポット'}
+            >
+              <SkipBack size={10} />
+            </button>
+
+            {/* Rewind Word-by-Word */}
+            <button
+              onClick={() => handleSeek('rwd')}
+              disabled={!isSpeaking}
+              className="btn btn-outline"
+              style={{ width: '24px', height: '24px', padding: '0', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+              title={language === 'en' ? 'Rewind' : '巻き戻し'}
+            >
+              <Rewind size={10} />
+            </button>
+
+            {/* Play / Pause Toggle */}
+            <button
+              onClick={() => speakCurrentStop(currentTourStop.text)}
+              className="btn btn-primary"
+              style={{ width: '28px', height: '28px', padding: '0', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '50%' }}
+              title={isSpeaking && !isPaused ? (language === 'en' ? 'Pause' : '一時停止') : (language === 'en' ? 'Play' : '再生')}
+            >
+              {isSpeaking && !isPaused ? <Pause size={10} /> : <Play size={10} />}
+            </button>
+
+            {/* Fast-Forward Word-by-Word */}
+            <button
+              onClick={() => handleSeek('fwd')}
+              disabled={!isSpeaking}
+              className="btn btn-outline"
+              style={{ width: '24px', height: '24px', padding: '0', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+              title={language === 'en' ? 'Fast-Forward' : '早送り'}
+            >
+              <FastForward size={10} />
+            </button>
+
+            {/* Skip Next Room */}
+            <button
+              onClick={nextStop}
+              disabled={currentStop === tourStops.length}
+              className="btn btn-outline"
+              style={{ width: '24px', height: '24px', padding: '0', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+              title={language === 'en' ? 'Next Stop' : '次のスポット'}
+            >
+              <SkipForward size={10} />
+            </button>
+
+            {/* Stop Speech */}
+            <button
+              onClick={stopSpeechComplete}
+              disabled={!activeSpeechText}
+              className="btn btn-outline"
+              style={{ width: '24px', height: '24px', padding: '0', display: 'flex', alignItems: 'center', justifyContent: 'center', borderColor: activeSpeechText ? 'var(--error)' : 'rgba(255,255,255,0.1)' }}
+              title={language === 'en' ? 'Stop' : '停止'}
+            >
+              <Square size={10} style={{ fill: activeSpeechText ? 'var(--error)' : 'none', color: activeSpeechText ? 'var(--error)' : 'currentColor' }} />
+            </button>
           </div>
-
-          <button
-            onClick={() => speakCurrentStop(currentTourStop.text)}
-            className={`btn ${isSpeaking ? 'btn-secondary' : 'btn-primary'}`}
-            style={isSpeaking ? { backgroundColor: 'var(--error)', color: 'white', borderColor: 'var(--error)', padding: '4px 12px', height: '24px' } : { padding: '4px 12px', height: '24px' }}
-          >
-            {isSpeaking ? <VolumeX size={10} /> : <Volume2 size={10} />}
-            {isSpeaking ? (language === 'en' ? 'Stop' : '停止') : (language === 'en' ? 'Play' : '再生')}
-          </button>
         </div>
 
-        {/* Navigation Controls */}
-        <div className="device-nav">
-          <button
-            onClick={prevStop}
-            disabled={currentStop === 1}
-            className="btn btn-outline"
-            title="Previous Room"
-          >
-            <ChevronLeft size={14} />
-          </button>
-          <span className="device-nav-text">
-            {language === 'en' ? `ROOM ${currentStop}` : `第 ${currentStop} 室`}
-          </span>
-          <button
-            onClick={nextStop}
-            disabled={currentStop === tourStops.length}
-            className="btn btn-outline"
-            title="Next Room"
-          >
-            <ChevronRight size={14} />
-          </button>
-        </div>
       </div>
 
       {/* Main Museum Exhibit Display */}

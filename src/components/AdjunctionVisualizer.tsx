@@ -22,6 +22,7 @@ interface SpokenWord {
   start: number;
   end: number;
 }
+let activeUtteranceRef: SpeechSynthesisUtterance | null = null;
 
 export default function AdjunctionVisualizer({ language }: { language: 'en' | 'ja' }) {
   const getInitialRoom = (): number => {
@@ -152,6 +153,10 @@ export default function AdjunctionVisualizer({ language }: { language: 'en' | 'j
     if ('speechSynthesis' in window) {
       window.speechSynthesis.cancel();
     }
+    if (activeUtteranceRef) {
+      // Read to satisfy TS compiler check and release reference
+      activeUtteranceRef = null;
+    }
     setActiveSpeechText(null);
     setCurrentCharIndex(-1);
     setIsPaused(false);
@@ -169,8 +174,9 @@ export default function AdjunctionVisualizer({ language }: { language: 'en' | 'j
         return;
       }
 
-      const cleanText = sliceText.replace(/[\$\{\}\[\]\(\)⊣→≅↦]/g, ' '); 
+      const cleanText = ", " + sliceText.replace(/[\$\{\}\[\]\(\)⊣→≅↦]/g, ' '); 
       const utterance = new SpeechSynthesisUtterance(cleanText);
+      activeUtteranceRef = utterance; // Prevent garbage collection
       
       const voice = voices.find(v => v.name === selectedVoiceName);
       if (voice) {
@@ -183,7 +189,10 @@ export default function AdjunctionVisualizer({ language }: { language: 'en' | 'j
 
       utterance.onboundary = (event) => {
         if (event.name === 'word') {
-          setCurrentCharIndex(startIndex + event.charIndex);
+          const adjustedCharIdx = event.charIndex - 2;
+          if (adjustedCharIdx >= 0) {
+            setCurrentCharIndex(startIndex + adjustedCharIdx);
+          }
         }
       };
 

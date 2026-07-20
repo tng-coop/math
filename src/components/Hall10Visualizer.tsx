@@ -1,16 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { 
   BookOpen, Play, Pause, Square, 
   FastForward, Rewind, ChevronRight, CheckCircle2,
   Info
 } from 'lucide-react';
 
-interface TourStop {
-  id: number;
-  title: string;
-  subtitle: string;
-  text: string;
-}
+
 
 interface SpokenWord {
   text: string;
@@ -60,12 +55,30 @@ export default function Hall10Visualizer({ language }: { language: 'en' | 'ja' }
   const [burst, setBurst] = useState<boolean>(false);
 
   // Text-to-Speech (TTS) states
+  const tabContent = useMemo(() => {
+    return {
+      en: {
+        narrative: "Mathematics is ONLY the dual cycle of Free Generation (Syntax) vs. Quotienting (Semantics). The Yoneda Lemma represents the ultimate statement that mathematical existence is defined entirely by relational context. Free generation builds out the representable functor $h_A = \\text{Hom}(A, -)$ mapping all syntactic relationships outgoing from an object $A$. Quotienting defines $A$'s semantic existence entirely by collapsing its relational Hom-set connections to the rest of the category, proving that internal substance is equivalent to quotiented external relations.",
+        rigor: "Mathematically, defining structures via relationships is formally known as defining structures via 'Generators and Relations' (or 'Presentations'). The Yoneda Lemma asserts a natural isomorphism $\\text{Nat}(h_A, X) \\cong X(A)$ for any functor $X: \\mathcal{C} \\to \\text{Set}$ and object $A \\in \\mathcal{C}$. Free generation constructs the representable functor $h_A(Y) = \\text{Hom}(A, Y)$ as the syntactic collection of outgoing arrows. The quotient collapse occurs because the naturality of any transformation $\\alpha: h_A \\Rightarrow X$ forces it to be completely determined by the image of the identity morphism $\\alpha_A(1_A) = u \\in X(A)$, collapsing all Hom-set mappings into a single semantic point.",
+        history: "Proved by Nobuo Yoneda in 1954, the lemma revolutionized the philosophical stance of mathematical ontology. It demonstrated that an object has no isolated internal structure; its properties are completely encoded by its relations. This historical realization establishes that mathematical identity is exclusively born of the dual cycle of freely generating relational syntax ($h_A$) and quotienting it to resolve semantic existence, showing that objects are defined by presentations of their morphisms.",
+        exercises: "1. Select $A$ as the representing object. Calculate the freely generated representable Hom-sets $h_A(B)$ and $h_A(C)$ syntax.\n2. Choose an element $u \\in X(A)$. Show how the natural transformation components $\\alpha_B(f)$ and $\\alpha_C(h)$ collapse to specific semantic elements in the target sets via quotienting. Prove that this collapse demonstrates that an object's identity is the quotient limit of its relations."
+      },
+      ja: {
+        narrative: "数学は、自由生成（構文）と商化（意味論）の双対サイクル「のみ」で構成されています。米田の補題は、数学的存在が関係的文脈によって完全に定義されるという究極の言明です。自由生成は、対象 $A$ からのすべての発信矢印を写す表現可能関手 $h_A = \\text{Hom}(A, -)$ を構築します。商化は、対象 $A$ の意味的存在を圏の他の部分への関係的Hom集合を崩壊（商崩壊）させることで定義し、本質が自由生成された構文の意図的な商であることを証明します。",
+        rigor: "数学において、関係性を介して構造を定義することは、公式に「生成元と関係式」（あるいは「プレゼンテーション」）による定義として知られています。米田の補題は、任意の関手 $X: \\mathcal{C} \\to \\text{Set}$ と対象 $A \\in \\mathcal{C}$ に対する自然同型 $\\text{Nat}(h_A, X) \\cong X(A)$ を主張します。自由生成は、射の構文的集合として表現可能関手 $h_A(Y) = \\text{Hom}(A, Y)$ を作成します。任意の自然変換 $\\alpha: h_A \\Rightarrow X$ は、その自然性により恒等射の像 $\\alpha_A(1_A) = u \\in X(A)$ によって完全に決定され、すべてのHom集合の写像を単一の意味的点へと商崩壊させるため、商化が発生します。",
+        history: "1954年に米田信夫によって証明されたこの補題は、数学的存在論の哲学的立場に革命をもたらしました。対象は独立した内部構造を持たず、その存在は関係性の全体によって完全に商化されることを示しました。この歴史的認識は、数学的同一性が、関係的構文（$h_A$）の自由生成とその意味的存在を解決するための商化という双対サイクルのみから生まれることを確立し、対象がその射のプレゼンテーションによって定義されることを示しています。",
+        exercises: "1. 表現対象として $A$ を選択します。自由生成された表現可能Hom集合 $h_A(B)$ および $h_A(C)$ の構文を計算してください。\n2. 要素 $u \\in X(A)$ を選択します。自然変換コンポーネント $\\alpha_B(f)$ および $\\alpha_C(h)$ が、商化を介してターゲット集合内の特定の意味的要素にどのように崩壊するかを示してください。この崩壊が、対象の同一性がその関係性の商極限であることを実証しているか証明してください。"
+      }
+    }[language];
+  }, [language]);
+
   const [activeSpeechText, setActiveSpeechText] = useState<string | null>(null);
   const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
   const [selectedVoiceName, setSelectedVoiceName] = useState<string>('');
   const [currentCharIndex, setCurrentCharIndex] = useState<number>(-1);
   const [speedMultiplier, setSpeedMultiplier] = useState<number>(1.0);
   const [isPaused, setIsPaused] = useState<boolean>(false);
+  const [activeTab, setActiveTab] = useState<'narrative' | 'rigor' | 'history' | 'exercises'>('narrative');
 
   // Functor X sets and maps definition
   const X_sets: Record<CatObject, string[]> = {
@@ -213,10 +226,10 @@ export default function Hall10Visualizer({ language }: { language: 'en' | 'ja' }
     window.speechSynthesis.onvoiceschanged = loadVoices;
   }, [language]);
 
-  // Speech Synthesis player helper
+  // Stop speech when current stop, language, or active tab changes
   useEffect(() => {
     stopSpeechComplete();
-  }, [currentStop, language]);
+  }, [currentStop, language, activeTab]);
 
   useEffect(() => {
     if (activeSpeechText) {
@@ -274,7 +287,14 @@ export default function Hall10Visualizer({ language }: { language: 'en' | 'ja' }
         if (event.name === 'word') {
           const adjustedCharIdx = event.charIndex - 2;
           if (adjustedCharIdx >= 0) {
-            setCurrentCharIndex(startIndex + adjustedCharIdx);
+            const currentIdx = startIndex + adjustedCharIdx;
+            setCurrentCharIndex(currentIdx);
+            
+            // Extract the word that is currently being spoken
+            const spokenWord = getWordAtCharIndex(text, currentIdx);
+            if (spokenWord) {
+              handleSpeechTrigger(spokenWord);
+            }
           }
         }
       };
@@ -311,6 +331,23 @@ export default function Hall10Visualizer({ language }: { language: 'en' | 'ja' }
       }
     } else {
       startSpeech(text, 0);
+    }
+  };
+
+  const getWordAtCharIndex = (text: string, charIdx: number): string | null => {
+    const words = getSpokenWords(text, language);
+    const match = words.find(w => charIdx >= w.start && charIdx < w.end);
+    return match ? match.text : null;
+  };
+
+  const handleSpeechTrigger = (word: string) => {
+    const w = word.toLowerCase();
+    if (w.includes('representable') || w.includes('outgoing') || w.includes('arrow') || 
+        w.includes('表現可能') || w.includes('発信') || w.includes('矢印')) {
+      setRepresentingObj('A');
+    } else if (w.includes('yoneda') || w.includes('lemma') || w.includes('isomorphism') || w.includes('natural') || 
+               w.includes('米田') || w.includes('補題') || w.includes('同型') || w.includes('自然')) {
+      setAnimating(true);
     }
   };
 
@@ -401,73 +438,7 @@ export default function Hall10Visualizer({ language }: { language: 'en' | 'ja' }
     }
   };
 
-  // Room Stops explanations
-  const tourStops: TourStop[] = language === 'ja' ? [
-    {
-      id: 1,
-      title: "I. 関係性としての存在",
-      subtitle: "対象の「中身」ではなく「関係」によって本質を記述する。",
-      text: "現代数学の画期的な洞察は「対象そのものの本質は、他のすべてのものとの関係性の全体によって完全に規定される」という点にあります。この展示では、3つの対象 A, B, C とその間の射（恒等射 1_A, 1_B, 1_C、f: A -> B、g: B -> C、および合成 h = g o f: A -> C）からなる小さな圏 C を考えます。任意の対象をクリックして「基準点（表現対象）」に指定し、そこから広がる関係性のネットワークを探検しましょう。"
-    },
-    {
-      id: 2,
-      title: "II. 表現可能関手 h_A = Hom(A, -)",
-      subtitle: "選択した対象 A から、他の対象への「接続ベクトル」を収集する。",
-      text: "対象 A が圏の他の対象とどのように繋がっているかを測るために、表現可能関手 h_A = Hom(A, -) を定義します。この関手は、任意の対象 Y に対して、A から Y へのすべての射の集合である Hom 集合 Hom(A, Y) を割り当てます。A を表現対象とすると、h_A(A) = {1_A}、h_A(B) = {f}、h_A(C) = {h} となり、他の対象への道筋が完全にリストアップされます。対象をクリックして変更すると、このレーダー波のような集合が動的に変化します。"
-    },
-    {
-      id: 3,
-      title: "III. 集合値関手 X: C -> Set",
-      subtitle: "圏 C を、要素と関数からなる具体的な集合の世界に射影する。",
-      text: "抽象的な圏 C を具体化するため、別の関手 X: C -> Set を考えます。これは各対象 Y を具体的な要素の集合 X(Y) へ写し、各射を集合間の関数へ写します。ここでは、X(A) = {a1, a2, a3}、X(B) = {b1, b2}、X(C) = {c1, c2, c3} と定義します。射 f, g はそれぞれ要素をマッピングする関数になり、合成 h の挙動は X(h) = X(g) o X(f) として厳密に計算されます。要素にホバーして関数の挙動を確認できます。"
-    },
-    {
-      id: 4,
-      title: "IV. 米田の同型：Nat(h_A, X) ≅ X(A)",
-      subtitle: "X(A) から1つの要素 u を選ぶだけで、全宇宙への自然変換が決まる。",
-      text: "米田の補題の核心は次の同型です：自然変換 alpha: h_A => X の全体は、集合 X(A) の要素 u と完全に1対1対応します。つまり、X(A) の中から代表点 u を1つ指定するだけで、圏全体の Hom 集合から X の集合へと渡るすべての関数 alpha_Y: Hom(A, Y) -> X(Y) が一意にロックされます！その規則は極めて単純で、任意の射 m に対して alpha_Y(m) = X(m)(u) です。X(A) の要素をクリックして u を選択し、発生する矢印を確認してください。"
-    },
-    {
-      id: 5,
-      title: "V. 自然性の可換正方形 (Commutative Square)",
-      subtitle: "２本の経路が同じ地点に到達し、構造の整合性を証明する。",
-      text: "自然変換としての整合性を検証するため、任意の射（例：f: A -> B）に対する「自然性の可換正方形」を見てみましょう。h_A(A) にある恒等射 1_A から出発して、「右に行ってから下に行く経路（射 f_* を経て alpha_B にマップされる）」と、「下に行ってから右に行く経路（alpha_A により u にマップされてから X(f) で送られる）」は、X(B) の全く同一の要素に到着します。アニメーションを再生して、2つの光の粒子が完全に合流する様子を確認してください。"
-    }
-  ] : [
-    {
-      id: 1,
-      title: "I. Existence as Relation",
-      subtitle: "An object is defined not by its internal substance, but by its relations.",
-      text: "A profound insight of modern mathematics is that the identity of an object is completely determined by its network of relations with other objects. Here, we define a small category C with three objects: A, B, and C, containing identity morphisms, f: A -> B, g: B -> C, and the composite h = g o f: A -> C. Click on any object in the diagram to designate it as our 'representing object' (representing point) and see the relational network."
-    },
-    {
-      id: 2,
-      title: "II. The Representable Functor h_A = Hom(A, -)",
-      subtitle: "Probing the category from the viewpoint of A to collect outgoing arrows.",
-      text: "To measure how the category looks from a chosen representing object A, we construct the representable functor h_A = Hom(A, -). For each target object Y, this functor returns the Hom-set Hom(A, Y) consisting of all morphisms from A to Y. When A is the representing object, h_A(A) = {1_A}, h_A(B) = {f}, and h_A(C) = {h}. Changing the representing object updates these sets dynamically, acting as a relational radar."
-    },
-    {
-      id: 3,
-      title: "III. The Set-Valued Functor X: C -> Set",
-      subtitle: "Projecting the abstract category C into concrete sets and functions.",
-      text: "To ground our analysis, we introduce another functor X: C -> Set, mapping each object Y to a concrete set X(Y), and each morphism to a function. We define X(A) = {a1, a2, a3}, X(B) = {b1, b2}, and X(C) = {c1, c2, c3}. The maps are functions: X(f) maps a1 -> b1, a2 -> b2, a3 -> b1; X(g) maps b1 -> c1, b2 -> c2; and functoriality dictates that the composite X(h) must equal X(g) o X(f). Hover over elements to trace the mappings."
-    },
-    {
-      id: 4,
-      title: "IV. Yoneda Isomorphism: Nat(h_A, X) ≅ X(A)",
-      subtitle: "Selecting a single element u in X(A) uniquely generates a natural transformation.",
-      text: "The Yoneda Lemma establishes a bijection between natural transformations alpha: h_A => X and elements in the set X(A). By picking a single seed element u in X(A), you uniquely determine the entire natural transformation! For any morphism m in Hom(A, Y), the component alpha_Y maps m to X(m)(u) in X(Y). Select an element u in X(A) by clicking it, and watch the entire natural transformation mapping update in real time."
-    },
-    {
-      id: 5,
-      title: "V. The Commutative Naturality Square",
-      subtitle: "Verifying structural consistency along two different compositional paths.",
-      text: "To witness naturality in action, we analyze the commuting square for a morphism (e.g. f: A -> B). Starting with the identity 1_A in h_A(A), we can travel via two paths: either map right via f_* to f, then down via alpha_B to alpha_B(f); or map down via alpha_A to u, then right via X(f) to X(f)(u). Both paths land on the exact same element in X(B). Trigger the animation to watch the particles merge, proving the diagram commutes."
-    }
-  ];
-
-  const currentTourStop = tourStops[currentStop - 1];
-  const isSpeaking = activeSpeechText === currentTourStop.text;
+  const isSpeaking = activeSpeechText === tabContent[activeTab];
 
   // Calculate image for a morphism under alpha
   // alpha_Y(m) = X(m)(u)
@@ -578,7 +549,7 @@ export default function Hall10Visualizer({ language }: { language: 'en' | 'ja' }
             </button>
 
             <button
-              onClick={() => speakCurrentStop(currentTourStop.text)}
+              onClick={() => speakCurrentStop(tabContent[activeTab])}
               className="btn btn-primary"
               style={{ width: '28px', height: '28px', padding: '0', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '50%' }}
               title={isSpeaking && !isPaused ? (language === 'en' ? 'Pause' : '一時停止') : (language === 'en' ? 'Play' : '再生')}
@@ -621,11 +592,32 @@ export default function Hall10Visualizer({ language }: { language: 'en' | 'ja' }
             </div>
 
             <div className="animate-pop-in">
-              <h3 className="placard-title">{currentTourStop.title}</h3>
-              <p className="placard-subtitle">{currentTourStop.subtitle}</p>
+              <h3 className="placard-title">
+                {language === 'en' ? 'The Yoneda Ontology' : '米田存在論'}
+              </h3>
+              <p className="placard-subtitle">
+                {language === 'en' ? 'Defining existence through relational Hom-sets' : '関係性（Hom集合）による存在の定義'}
+              </p>
+
+              {/* Tab Selector */}
+              <div className="placard-tabs" style={{ display: 'flex', gap: '0.35rem', marginBottom: '1.25rem', borderBottom: '1px solid rgba(255,255,255,0.08)', paddingBottom: '0.5rem' }}>
+                {(['narrative', 'rigor', 'history', 'exercises'] as const).map(tab => (
+                  <button
+                    key={tab}
+                    onClick={() => setActiveTab(tab)}
+                    className={`btn-lang ${activeTab === tab ? 'active' : ''}`}
+                    style={{ fontSize: '0.68rem', padding: '4px 8px', textTransform: 'uppercase', letterSpacing: '0.05em' }}
+                  >
+                    {tab === 'narrative' ? (language === 'en' ? 'Narrative' : '叙事') :
+                     tab === 'rigor' ? (language === 'en' ? 'Mathematical Rigor' : '数学的厳密性') :
+                     tab === 'history' ? (language === 'en' ? 'Historical Context' : '歴史的背景') :
+                     (language === 'en' ? 'Exercises' : '演習')}
+                  </button>
+                ))}
+              </div>
               
-              <div className="placard-text" style={{ fontSize: '0.85rem', lineHeight: '1.6' }}>
-                {renderHighlightedText(currentTourStop.text)}
+              <div className="placard-text" style={{ fontSize: '0.85rem', lineHeight: '1.6', minHeight: '140px', whiteSpace: 'pre-line' }}>
+                {renderHighlightedText(tabContent[activeTab])}
               </div>
 
               {/* Extra context / interactive prompt depending on current stop */}

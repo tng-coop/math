@@ -1,9 +1,19 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { 
-  Play, Pause, RotateCcw, ChevronRight, AlertCircle, Info, Sparkles, BookOpen, Sliders 
+  Play, Pause, RotateCcw, ChevronRight, AlertCircle, Info, Sparkles, BookOpen, Sliders, Square, FastForward, Rewind
 } from 'lucide-react';
 
 // ============================================================================
+// Types & AST Definitions
+// ============================================================================
+
+interface SpokenWord {
+  text: string;
+  start: number;
+  end: number;
+}
+
+let activeUtteranceRef: SpeechSynthesisUtterance | null = null;
 // Types & AST Definitions
 // ============================================================================
 
@@ -472,6 +482,273 @@ const translations = {
 export default function Hall5Visualizer({ language, onlyVisualizer = false }: { language: 'en' | 'ja', onlyVisualizer?: boolean }) {
   const t = translations[language];
 
+  const tabContent = useMemo(() => {
+    return {
+      en: {
+        narrative: "Mathematics is ONLY the dual cycle of Free Generation (Syntax) vs. Quotienting (Semantics). Computation is the perfect instantiation of this core philosophy: we begin with free generation by combining integers and operators into Abstract Syntax Trees (ASTs), which represent syntactically valid terms without a computed value. Semantics are introduced by running evaluation reduction rules as equivalence equations (e.g., $3 + 4 \\equiv 7$). Each evaluation step collapses a subtree down to a single evaluated value, quotienting the syntax tree until we reach the final semantic value.",
+        rigor: "Mathematically, the process of free generation and quotienting is formally known as defining structures via 'Generators and Relations' (or 'Presentations'). This reveals the 'Core Logic' connection: human logical reason (Intuitionistic Logic) is itself a presentation, where we freely generate the syntax of propositional formulas (generators) and quotient them by provable equivalence (relations), collapsing the infinite syntactic tree of formulas into a Heyting Algebra (or a Boolean Algebra for Classical Logic). For arithmetic, the syntax of terms $T$ is freely generated over numbers and operators, and quotiented by the congruence relation $t_1 \\equiv t_2$ defined by semantic evaluation, collapsing the tree to a single quotient representative.",
+        history: "The historical quest of Hilbert, Frege, and Russell to reduce mathematics to pure syntax failed because mathematics is only the dual cycle of free syntactic generation followed by quotient semantic collapse. Gödel's incompleteness and Turing's computability showed that syntax remains inert without the quotienting reduction rules that collapse computations to semantic values. This history proves that logic and computation are semantic quotients of freely generated syntactic structures.",
+        exercises: "1. Parse the arithmetic term $(3 + 5) * (10 - 4)$ into its freely generated AST syntax. Find the equivalence class of terms quotiented to the same semantic value $48$.\n2. Explain how logical deduction acts as a quotient collapse on freely generated propositional formulas, collapsing syntax into Heyting algebraic semantics, verifying the Core Logic presentation."
+      },
+      ja: {
+        narrative: "数学は、自由生成（構文）と商化（意味論）の双対サイクル「のみ」で構成されています。計算はこの核心的哲学の完全な具現化です。まず、整数と演算子を抽象構文木（AST）に組み合わせることで自由生成を行います。これは計算された値を持たない、構文的に妥当な項を表します。意味論は、評価の簡約ルールを同値等式（例：$3 + 4 \\equiv 7$）として実行することによって導入されます。各評価ステップは部分木を単一の評価値に崩壊させ、最終的な意味値に達するまで構文木を商化します。",
+        rigor: "数学において、自由生成と商化を介して計算を定義することは、「生成元と関係式」（あるいは「プレゼンテーション」）による構造の定義として正式に知られています。これは「核心的論理（Core Logic）」の接続を明らかにします。人間の論理的推論（直観主義論理）自体がプレゼンテーションであり、命題論理式の構文を自由に生成し（生成元）、それらを証明可能な同値性（関係式）で商化することで、論理式の無限の構文木をハイティング代数（古典論理の場合はブール代数）に崩壊させます。算術の場合、項の構文 $T$ は数値と演算子から自由生成され、意味的評価によって合同関係 $t_1 \\equiv t_2$ に商化され、単一の商代表元に崩壊します。",
+        history: "数学を純粋な構文へと還元しようとしたヒルベルト、フレーゲ、ラッセルの歴史的探求が失敗したのは、数学が「構文の自由生成とその後の意味的商崩壊」の双対サイクルのみで成り立っているからです。ゲーデルの不完全性とチューリングの計算可能性は、計算を意味値へと崩壊させる商化の簡約ルールなしには、構文は不活性なままであることを示しました。この歴史は、論理と計算が自由生成された構文構造の意味的商であることを証明しています。",
+        exercises: "1. 算術項 $(3 + 5) * (10 - 4)$ を自由生成されたAST構文に解析してください。同じ意味値 $48$ に商化される項の同値類を求めてください。 2. 論理的演繹が、自由生成された命題論理式に対する商崩壊として機能し、構文をハイティング代数的意味論へと崩壊させ、核心的論理プレゼンテーションを検証することを説明してください。"
+      }
+    }[language];
+  }, [language]);
+
+  // TTS States
+  const [activeSpeechText, setActiveSpeechText] = useState<string | null>(null);
+  const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
+  const [selectedVoiceName, setSelectedVoiceName] = useState<string>('');
+  const [currentCharIndex, setCurrentCharIndex] = useState<number>(-1);
+  const [speedMultiplier, setSpeedMultiplier] = useState<number>(1.0);
+  const [isPaused, setIsPaused] = useState<boolean>(false);
+  const [activeTab, setActiveTab] = useState<'narrative' | 'rigor' | 'history' | 'exercises'>('narrative');
+
+  // Load voices dynamically based on active language selection
+  useEffect(() => {
+    if (typeof window === 'undefined' || !('speechSynthesis' in window)) return;
+
+    const loadVoices = () => {
+      const allVoices = window.speechSynthesis.getVoices();
+      const langPrefix = language === 'ja' ? 'ja' : 'en';
+      const filteredVoices = allVoices.filter(v => v.lang.startsWith(langPrefix));
+      setVoices(filteredVoices);
+
+      const scoredVoices = filteredVoices.map(v => {
+        let score = 0;
+        const nameLower = v.name.toLowerCase();
+        const langLower = v.lang.toLowerCase();
+
+        if (language === 'en') {
+          if (langLower.includes('en-us') || langLower.includes('en_us')) score += 100;
+          if (nameLower.includes('natural') || nameLower.includes('neural') || nameLower.includes('online')) score += 50;
+          if (nameLower.includes('google') || nameLower.includes('microsoft') || nameLower.includes('apple')) score += 30;
+        } else {
+          if (nameLower.includes('google') || nameLower.includes('natural') || nameLower.includes('neural') || nameLower.includes('online')) score += 50;
+          if (nameLower.includes('sayaka') || nameLower.includes('haruka')) score += 20;
+        }
+        return { voice: v, score };
+      });
+
+      scoredVoices.sort((a, b) => b.score - a.score);
+      const bestVoice = scoredVoices[0]?.voice || filteredVoices[0];
+
+      if (bestVoice) {
+        setSelectedVoiceName(bestVoice.name);
+      }
+    };
+
+    loadVoices();
+    window.speechSynthesis.onvoiceschanged = loadVoices;
+  }, [language]);
+
+  // Stop speech when active tab or language changes
+  useEffect(() => {
+    stopSpeechComplete();
+  }, [activeTab, language]);
+
+  // Hot-reload speed multiplier mid-speech
+  useEffect(() => {
+    if (activeSpeechText) {
+      const activeIdx = currentCharIndex >= 0 ? currentCharIndex : 0;
+      startSpeech(activeSpeechText, activeIdx);
+    }
+  }, [speedMultiplier]);
+
+  useEffect(() => {
+    return () => {
+      if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+      }
+    };
+  }, []);
+
+  const stopSpeechComplete = () => {
+    if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+      window.speechSynthesis.cancel();
+    }
+    if (activeUtteranceRef) {
+      activeUtteranceRef = null;
+    }
+    setActiveSpeechText(null);
+    setCurrentCharIndex(-1);
+    setIsPaused(false);
+  };
+
+  const startSpeech = (text: string, startIndex: number) => {
+    if (typeof window === 'undefined' || !('speechSynthesis' in window)) return;
+    window.speechSynthesis.cancel();
+    
+    setTimeout(() => {
+      const sliceText = text.substring(startIndex);
+      if (!sliceText.trim()) {
+        stopSpeechComplete();
+        return;
+      }
+
+      const cleanText = ", " + sliceText.replace(/[\$\{\}\[\]\(\)⊣→≅↦]/g, ' '); 
+      const utterance = new SpeechSynthesisUtterance(cleanText);
+      activeUtteranceRef = utterance; // Prevent garbage collection
+      
+      const voice = voices.find(v => v.name === selectedVoiceName);
+      if (voice) {
+        utterance.voice = voice;
+      }
+
+      const baseRate = language === 'ja' ? 0.95 : 0.92;
+      utterance.rate = baseRate * speedMultiplier;
+      utterance.pitch = 1.0;
+
+      utterance.onboundary = (event) => {
+        if (event.name === 'word') {
+          const adjustedCharIdx = event.charIndex - 2;
+          if (adjustedCharIdx >= 0) {
+            const currentIdx = startIndex + adjustedCharIdx;
+            setCurrentCharIndex(currentIdx);
+            
+            // Extract the word that is currently being spoken
+            const spokenWord = getWordAtCharIndex(text, currentIdx);
+            if (spokenWord) {
+              handleSpeechTrigger(spokenWord);
+            }
+          }
+        }
+      };
+
+      utterance.onend = () => {
+        setTimeout(() => {
+          if (!window.speechSynthesis.speaking && !window.speechSynthesis.pending) {
+            stopSpeechComplete();
+          }
+        }, 60);
+      };
+
+      utterance.onerror = () => {
+        stopSpeechComplete();
+      };
+
+      window.speechSynthesis.speak(utterance);
+      setActiveSpeechText(text);
+      setIsPaused(false);
+      setCurrentCharIndex(startIndex);
+    }, 100);
+  };
+
+  const speakCurrentStop = (text: string) => {
+    if (typeof window === 'undefined' || !('speechSynthesis' in window)) return;
+
+    if (activeSpeechText === text) {
+      if (isPaused) {
+        window.speechSynthesis.resume();
+        setIsPaused(false);
+      } else {
+        window.speechSynthesis.pause();
+        setIsPaused(true);
+      }
+    } else {
+      startSpeech(text, 0);
+    }
+  };
+
+  const handleSeek = (direction: 'fwd' | 'rwd') => {
+    if (!activeSpeechText) return;
+    const words = getSpokenWords(activeSpeechText, language);
+    if (words.length === 0) return;
+
+    let currentWordIdx = words.findIndex(
+      w => currentCharIndex >= w.start && currentCharIndex <= w.end
+    );
+    if (currentWordIdx === -1) {
+      currentWordIdx = words.findIndex(w => w.start > currentCharIndex);
+      if (currentWordIdx === -1) currentWordIdx = words.length - 1;
+    }
+
+    const wordSkip = 4;
+    let targetWordIdx = direction === 'fwd' 
+      ? Math.min(words.length - 1, currentWordIdx + wordSkip) 
+      : Math.max(0, currentWordIdx - wordSkip);
+
+    const targetWord = words[targetWordIdx];
+    startSpeech(activeSpeechText, targetWord.start);
+  };
+
+  const getSpokenWords = (text: string, lang: 'en' | 'ja'): SpokenWord[] => {
+    const words: SpokenWord[] = [];
+    if (lang === 'ja') {
+      for (let i = 0; i < text.length; i++) {
+        words.push({ text: text[i], start: i, end: i + 1 });
+      }
+    } else {
+      const wordRegex = /[a-zA-Z0-9'’⊣→≅↦ηε\(\)\{\}\-\:\,]+/g;
+      let match;
+      while ((match = wordRegex.exec(text)) !== null) {
+        words.push({
+          text: match[0],
+          start: match.index,
+          end: match.index + match[0].length
+        });
+      }
+    }
+    return words;
+  };
+
+  const getWordAtCharIndex = (text: string, charIdx: number): string | null => {
+    const words = getSpokenWords(text, language);
+    const match = words.find(w => charIdx >= w.start && charIdx < w.end);
+    return match ? match.text : null;
+  };
+
+  const handleSpeechTrigger = (word: string) => {
+    const w = word.toLowerCase();
+    if (w.includes('ast') || w.includes('tree') || w.includes('syntax') || w.includes('generate') || w.includes('木') || w.includes('構文') || w.includes('生成')) {
+      try {
+        setErrorMsg(null);
+        const parsed = parseExpression(originalExpr, svgWidth, svgHeight);
+        setTree(parsed);
+        setLogs([]);
+        setAutoplay(false);
+        setIsEvaluating(false);
+      } catch (err: any) {}
+    } else if (w.includes('evaluate') || w.includes('evaluation') || w.includes('collapse') || w.includes('reduction') || w.includes('equivalence') || w.includes('semantics') || w.includes('評価') || w.includes('崩壊') || w.includes('簡約') || w.includes('同値') || w.includes('意味')) {
+      setAutoplay(true);
+    }
+  };
+
+  const renderHighlightedText = (text: string) => {
+    const words = getSpokenWords(text, language);
+    let result: React.ReactNode[] = [];
+    let lastIdx = 0;
+    
+    words.forEach((w, idx) => {
+      if (w.start > lastIdx) {
+        result.push(text.substring(lastIdx, w.start));
+      }
+      
+      const isCurrent = currentCharIndex >= w.start && currentCharIndex < w.end;
+      result.push(
+        <span 
+          key={idx} 
+          className={isCurrent ? "word-highlight" : "word-normal"}
+          onClick={() => startSpeech(text, w.start)}
+          title={language === 'en' ? 'Click to play from here' : 'ここから再生'}
+        >
+          {w.text}
+        </span>
+      );
+      lastIdx = w.end;
+    });
+    
+    if (lastIdx < text.length) {
+      result.push(text.substring(lastIdx));
+    }
+    
+    return result;
+  };
+
   // Preset Expressions
   const presets = [
     '(3 + 5) * (10 - 4)',
@@ -708,16 +985,132 @@ export default function Hall5Visualizer({ language, onlyVisualizer = false }: { 
             {!onlyVisualizer && (
               <>
                 <div className="placard-header">
+                  <BookOpen size={12} />
                   <span style={{ fontSize: '0.65rem', fontWeight: 800, color: 'var(--primary)', letterSpacing: '0.15em' }}>
                     EXHIBIT #05: ALGORITHMS
                   </span>
                 </div>
                 <h1 className="placard-title">{t.title}</h1>
                 <p className="placard-subtitle">{t.subtitle}</p>
-                
-                <div className="placard-text" style={{ fontSize: '0.85rem', marginBottom: '1.5rem' }}>
-                  <p>{t.infoParagraph1}</p>
-                  <p>{t.infoParagraph2}</p>
+
+                {/* Tab Selector */}
+                <div className="placard-tabs" style={{ display: 'flex', gap: '0.35rem', marginBottom: '1.25rem', borderBottom: '1px solid rgba(255,255,255,0.08)', paddingBottom: '0.5rem' }}>
+                  {(['narrative', 'rigor', 'history', 'exercises'] as const).map(tab => (
+                    <button
+                      key={tab}
+                      onClick={() => setActiveTab(tab)}
+                      className={`btn-lang ${activeTab === tab ? 'active' : ''}`}
+                      style={{ fontSize: '0.68rem', padding: '4px 8px', textTransform: 'uppercase', letterSpacing: '0.05em' }}
+                    >
+                      {tab === 'narrative' ? (language === 'en' ? 'Narrative' : '叙事') :
+                       tab === 'rigor' ? (language === 'en' ? 'Mathematical Rigor' : '数学的厳密性') :
+                       tab === 'history' ? (language === 'en' ? 'Historical Context' : '歴史的背景') :
+                       (language === 'en' ? 'Exercises' : '演習')}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Audio Guide Device Widget */}
+                <div className="audio-guide-player" style={{ marginBottom: '1.25rem', padding: '0.6rem 1rem', gap: '1rem', borderRadius: '0.75rem' }}>
+                  <div className="device-info">
+                    <div className="device-screen" style={{ width: '2rem', height: '2rem', borderRadius: '0.5rem', fontSize: '0.55rem' }}>
+                      {activeSpeechText ? 'ON' : 'OFF'}
+                    </div>
+                    <div className="device-meta">
+                      <h4 style={{ fontSize: '0.55rem' }}>{language === 'en' ? 'Audio Companion' : '音声ガイド'}</h4>
+                      <p style={{ fontSize: '0.5rem' }}>{activeTab.toUpperCase()}</p>
+                    </div>
+                  </div>
+
+                  <div className="audio-controls-group" style={{ gap: '0.5rem', padding: '0.2rem 0.75rem' }}>
+                    {voices.length > 0 && (
+                      <select
+                        value={selectedVoiceName}
+                        onChange={(e) => setSelectedVoiceName(e.target.value)}
+                        className="input-text"
+                        style={{ 
+                          width: '80px', 
+                          fontSize: '0.55rem', 
+                          padding: '1px 2px', 
+                          height: '20px', 
+                          background: 'rgba(0,0,0,0.5)',
+                          border: '1px solid rgba(212,175,55,0.3)',
+                          color: 'var(--primary)',
+                          cursor: 'pointer',
+                          borderRadius: '4px'
+                        }}
+                      >
+                        {voices.map((v, i) => (
+                          <option key={i} value={v.name} style={{ background: '#0b0f19', color: '#fff' }}>
+                            {v.name.replace('Microsoft', 'MS').replace('Google', 'G').replace('日本語', 'JP')}
+                          </option>
+                        ))}
+                      </select>
+                    )}
+
+                    <select
+                      value={speedMultiplier.toString()}
+                      onChange={(e) => setSpeedMultiplier(parseFloat(e.target.value))}
+                      className="input-text"
+                      style={{ 
+                        width: '48px', 
+                        fontSize: '0.55rem', 
+                        padding: '1px 2px', 
+                        height: '20px', 
+                        background: 'rgba(0,0,0,0.5)',
+                        border: '1px solid rgba(212,175,55,0.3)',
+                        color: 'var(--primary)',
+                        cursor: 'pointer',
+                        borderRadius: '4px'
+                      }}
+                    >
+                      <option value="1">1.0x</option>
+                      <option value="1.25">1.2x</option>
+                      <option value="1.5">1.5x</option>
+                      <option value="2">2.0x</option>
+                    </select>
+
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                      <button
+                        onClick={() => handleSeek('rwd')}
+                        disabled={!activeSpeechText}
+                        className="btn btn-outline"
+                        style={{ width: '20px', height: '20px', padding: '0', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                      >
+                        <Rewind size={8} />
+                      </button>
+
+                      <button
+                        onClick={() => speakCurrentStop(tabContent[activeTab])}
+                        className="btn btn-primary"
+                        style={{ width: '22px', height: '22px', padding: '0', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '50%' }}
+                      >
+                        {activeSpeechText && !isPaused ? <Pause size={8} /> : <Play size={8} />}
+                      </button>
+
+                      <button
+                        onClick={() => handleSeek('fwd')}
+                        disabled={!activeSpeechText}
+                        className="btn btn-outline"
+                        style={{ width: '20px', height: '20px', padding: '0', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                      >
+                        <FastForward size={8} />
+                      </button>
+
+                      <button
+                        onClick={stopSpeechComplete}
+                        disabled={!activeSpeechText}
+                        className="btn btn-outline"
+                        style={{ width: '20px', height: '20px', padding: '0', display: 'flex', alignItems: 'center', justifyContent: 'center', borderColor: activeSpeechText ? 'var(--error)' : 'rgba(255,255,255,0.1)' }}
+                      >
+                        <Square size={8} style={{ fill: activeSpeechText ? 'var(--error)' : 'none', color: activeSpeechText ? 'var(--error)' : 'currentColor' }} />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="placard-text" style={{ fontSize: '0.85rem', lineHeight: '1.6', color: 'var(--text-muted)', marginBottom: '1.5rem', minHeight: '140px', whiteSpace: 'pre-line' }}>
+                  <p>{renderHighlightedText(tabContent[activeTab])}</p>
                 </div>
               </>
             )}

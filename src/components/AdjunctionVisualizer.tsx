@@ -24,7 +24,28 @@ interface SpokenWord {
 }
 
 export default function AdjunctionVisualizer({ language }: { language: 'en' | 'ja' }) {
-  const [currentStop, setCurrentStop] = useState<number>(1);
+  const getInitialRoom = (): number => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const room = parseInt(params.get('room') || '1', 10);
+      return (room >= 1 && room <= 6) ? room : 1;
+    }
+    return 1;
+  };
+
+  const [currentStop, setCurrentStop] = useState<number>(getInitialRoom);
+
+  // Synchronize room state with URL query parameter
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('room') !== currentStop.toString()) {
+        params.set('room', currentStop.toString());
+        const newUrl = `${window.location.pathname}?${params.toString()}${window.location.hash}`;
+        window.history.replaceState({}, '', newUrl);
+      }
+    }
+  }, [currentStop]);
   const [setElements, setSetElements] = useState<ElementNode[]>([
     { id: '1', label: 'I' },
     { id: '2', label: 'I' },
@@ -140,47 +161,49 @@ export default function AdjunctionVisualizer({ language }: { language: 'en' | 'j
     if (!('speechSynthesis' in window)) return;
     window.speechSynthesis.cancel();
     
-    const sliceText = text.substring(startIndex);
-    if (!sliceText.trim()) {
-      stopSpeechComplete();
-      return;
-    }
-
-    const cleanText = sliceText.replace(/[\$\{\}\[\]\(\)⊣→≅↦]/g, ' '); 
-    const utterance = new SpeechSynthesisUtterance(cleanText);
-    
-    const voice = voices.find(v => v.name === selectedVoiceName);
-    if (voice) {
-      utterance.voice = voice;
-    }
-
-    const baseRate = language === 'ja' ? 0.95 : 0.92;
-    utterance.rate = baseRate * speedMultiplier;
-    utterance.pitch = 1.0;
-
-    utterance.onboundary = (event) => {
-      if (event.name === 'word') {
-        setCurrentCharIndex(startIndex + event.charIndex);
+    // Introduce a brief timeout to let the browser cancel process complete
+    setTimeout(() => {
+      const sliceText = text.substring(startIndex);
+      if (!sliceText.trim()) {
+        stopSpeechComplete();
+        return;
       }
-    };
 
-    utterance.onend = () => {
-      // If speaking state went false, it finished naturally
-      setTimeout(() => {
-        if (!window.speechSynthesis.speaking && !window.speechSynthesis.pending) {
-          stopSpeechComplete();
+      const cleanText = sliceText.replace(/[\$\{\}\[\]\(\)⊣→≅↦]/g, ' '); 
+      const utterance = new SpeechSynthesisUtterance(cleanText);
+      
+      const voice = voices.find(v => v.name === selectedVoiceName);
+      if (voice) {
+        utterance.voice = voice;
+      }
+
+      const baseRate = language === 'ja' ? 0.95 : 0.92;
+      utterance.rate = baseRate * speedMultiplier;
+      utterance.pitch = 1.0;
+
+      utterance.onboundary = (event) => {
+        if (event.name === 'word') {
+          setCurrentCharIndex(startIndex + event.charIndex);
         }
-      }, 60);
-    };
+      };
 
-    utterance.onerror = () => {
-      stopSpeechComplete();
-    };
+      utterance.onend = () => {
+        setTimeout(() => {
+          if (!window.speechSynthesis.speaking && !window.speechSynthesis.pending) {
+            stopSpeechComplete();
+          }
+        }, 60);
+      };
 
-    window.speechSynthesis.speak(utterance);
-    setActiveSpeechText(text);
-    setIsPaused(false);
-    setCurrentCharIndex(startIndex);
+      utterance.onerror = () => {
+        stopSpeechComplete();
+      };
+
+      window.speechSynthesis.speak(utterance);
+      setActiveSpeechText(text);
+      setIsPaused(false);
+      setCurrentCharIndex(startIndex);
+    }, 100);
   };
 
   const speakCurrentStop = (text: string) => {

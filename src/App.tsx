@@ -2,7 +2,26 @@ import { useState } from 'react';
 import AdjunctionVisualizer from './components/AdjunctionVisualizer';
 
 export default function App() {
-  const [language, setLanguage] = useState<'en' | 'ja'>('en');
+  const getInitialLanguage = (): 'en' | 'ja' => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const lang = params.get('lang');
+      return (lang === 'ja' || lang === 'jp') ? 'ja' : 'en';
+    }
+    return 'en';
+  };
+
+  const [language, setLanguageState] = useState<'en' | 'ja'>(getInitialLanguage);
+
+  const setLanguage = (newLang: 'en' | 'ja') => {
+    setLanguageState(newLang);
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      params.set('lang', newLang);
+      const newUrl = `${window.location.pathname}?${params.toString()}${window.location.hash}`;
+      window.history.replaceState({}, '', newUrl);
+    }
+  };
 
   return (
     <div className="museum-app">

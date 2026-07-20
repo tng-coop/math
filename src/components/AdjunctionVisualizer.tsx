@@ -20,13 +20,13 @@ interface TourStop {
 export default function AdjunctionVisualizer({ language }: { language: 'en' | 'ja' }) {
   const [currentStop, setCurrentStop] = useState<number>(1);
   const [setElements, setSetElements] = useState<ElementNode[]>([
-    { id: '1', label: 'x' },
-    { id: '2', label: 'y' },
-    { id: '3', label: 'z' }
+    { id: '1', label: 'I' },
+    { id: '2', label: 'I' },
+    { id: '3', label: 'I' }
   ]);
   const [monoidWords, setMonoidWords] = useState<string[]>([]);
   const [animationState, setAnimationState] = useState<'idle' | 'free' | 'forget' | 'unit' | 'counit'>('idle');
-  const [counitInput, setCounitInput] = useState<string>('x-y-z');
+  const [counitInput, setCounitInput] = useState<string>('I-I-I');
   const [counitResult, setCounitResult] = useState<string | null>(null);
 
   // Text-to-Speech (TTS) state
@@ -41,11 +41,11 @@ export default function AdjunctionVisualizer({ language }: { language: 'en' | 'j
     const loadVoices = () => {
       const allVoices = window.speechSynthesis.getVoices();
       
-      // Filter based on active language
       const langPrefix = language === 'ja' ? 'ja' : 'en';
       const filteredVoices = allVoices.filter(v => v.lang.startsWith(langPrefix));
       setVoices(filteredVoices);
 
+      // Auto-select US English Neural voices
       const scoredVoices = filteredVoices.map(v => {
         let score = 0;
         const nameLower = v.name.toLowerCase();
@@ -75,6 +75,28 @@ export default function AdjunctionVisualizer({ language }: { language: 'en' | 'j
     window.speechSynthesis.onvoiceschanged = loadVoices;
   }, [language]);
 
+  // Reset elements labels depending on stop (e.g. notches 'I' for tallying, characters 'x' for alphabet)
+  useEffect(() => {
+    if (currentStop === 2) {
+      setSetElements([
+        { id: '1', label: 'I' },
+        { id: '2', label: 'I' },
+        { id: '3', label: 'I' }
+      ]);
+      setCounitInput('I-I-I');
+    } else {
+      setSetElements([
+        { id: '1', label: 'x' },
+        { id: '2', label: 'y' },
+        { id: '3', label: 'z' }
+      ]);
+      setCounitInput('x-y-z');
+    }
+    setMonoidWords([]);
+    setAnimationState('idle');
+    setCounitResult(null);
+  }, [currentStop]);
+
   // Stop speech when current stop or language changes
   useEffect(() => {
     if ('speechSynthesis' in window) {
@@ -97,7 +119,7 @@ export default function AdjunctionVisualizer({ language }: { language: 'en' | 'j
         window.speechSynthesis.cancel();
         setActiveSpeechText(null);
       } else {
-        window.speechSynthesis.cancel(); // Stop current speech
+        window.speechSynthesis.cancel();
         const cleanText = text.replace(/[\$\{\}\[\]\(\)⊣→≅↦]/g, ' '); 
         const utterance = new SpeechSynthesisUtterance(cleanText);
         
@@ -120,14 +142,22 @@ export default function AdjunctionVisualizer({ language }: { language: 'en' | 'j
   };
 
   const addElement = () => {
-    const labels = ['x', 'y', 'z', 'w', 'u', 'v', 'a', 'b', 'c'];
-    const usedLabels = setElements.map(e => e.label);
-    const available = labels.filter(l => !usedLabels.includes(l));
-    if (available.length === 0) return;
+    const labels = currentStop === 2 
+      ? ['I', 'I', 'I', 'I', 'I', 'I']
+      : ['x', 'y', 'z', 'w', 'u', 'v', 'a', 'b', 'c'];
     
-    const nextLabel = available[0];
-    const newId = (setElements.length + 1).toString();
-    setSetElements([...setElements, { id: newId, label: nextLabel }]);
+    if (currentStop === 2) {
+      if (setElements.length >= 8) return;
+      const newId = (setElements.length + 1).toString();
+      setSetElements([...setElements, { id: newId, label: 'I' }]);
+    } else {
+      const usedLabels = setElements.map(e => e.label);
+      const available = labels.filter(l => !usedLabels.includes(l));
+      if (available.length === 0) return;
+      const nextLabel = available[0];
+      const newId = (setElements.length + 1).toString();
+      setSetElements([...setElements, { id: newId, label: nextLabel }]);
+    }
     setMonoidWords([]);
   };
 
@@ -149,19 +179,28 @@ export default function AdjunctionVisualizer({ language }: { language: 'en' | 'j
     setTimeout(() => {
       const letters = setElements.map(e => e.label);
       if (letters.length === 0) {
-        setMonoidWords(['ε (empty)']);
+        setMonoidWords(currentStop === 2 ? ['0 (empty)'] : ['ε (empty)']);
         return;
       }
       
-      const generated: string[] = ['ε']; 
-      letters.forEach(l => generated.push(`[${l}]`));
-      if (letters.length >= 2) {
-        for (let i = 0; i < letters.length - 1; i++) {
-          generated.push(`[${letters[i]},${letters[i+1]}]`);
+      const generated: string[] = currentStop === 2 ? ['0'] : ['ε']; 
+      if (currentStop === 2) {
+        // Tally accumulation words
+        let tally = '';
+        letters.forEach(() => {
+          tally += 'I';
+          generated.push(tally);
+        });
+      } else {
+        letters.forEach(l => generated.push(`[${l}]`));
+        if (letters.length >= 2) {
+          for (let i = 0; i < letters.length - 1; i++) {
+            generated.push(`[${letters[i]},${letters[i+1]}]`);
+          }
         }
-      }
-      if (letters.length >= 3) {
-        generated.push(`[${letters.slice(0, 3).join(',')}]`);
+        if (letters.length >= 3) {
+          generated.push(`[${letters.slice(0, 3).join(',')}]`);
+        }
       }
       
       setMonoidWords(generated);
@@ -186,88 +225,100 @@ export default function AdjunctionVisualizer({ language }: { language: 'en' | 'j
   const triggerCounitCollapse = () => {
     setAnimationState('counit');
     const parts = counitInput.split('-');
-    const product = parts.join('');
-    setTimeout(() => {
-      setCounitResult(product);
-    }, 1000);
+    if (currentStop === 2) {
+      // Notches collapse to an integer count
+      const sum = parts.join('').length;
+      setTimeout(() => {
+        setCounitResult(sum.toString() + ' (mammoths / objects)');
+      }, 1000);
+    } else {
+      const product = parts.join('');
+      setTimeout(() => {
+        setCounitResult(product);
+      }, 1000);
+    }
   };
 
   // Tour stops definitions
   const tourStops: TourStop[] = language === 'ja' ? [
     {
       id: 1,
-      title: "I. 美術館入口：存在論的サイクル",
-      subtitle: "数学的実体の絶対的なあり方について。",
-      audioText: "随伴存在論ツアーへようこそ。数学はその究極の基盤において、自由生成と、崩壊ないし商化の構造的サイクルそのものです。すべての数学的システムは、最初に記号や要素の空間を自由に生成し、次に同値関係や方程式を課すことでそれを崩壊させることによって構築されます。本ツアーでは、最初にこのサイクルを最も直感的な言葉で体験し、最後に圏論を使った数学的定式化を学びます。",
+      title: "I. 美術館入口：百万年の双対性",
+      subtitle: "人類が記法と意味論を通じて存在を発見した物語。",
+      audioText: "随伴存在論ツアーへようこそ。数学とはその究極の基盤において、自由生成と、崩壊ないし商化の構造的サイクルそのものです。この二重性は、現代の高度な抽象概念ではなく、実のところ百万年前の人類が認知能力を獲得した黎明期から、脳の中で常に機能し続けてきた仕組みです。本日は、石ころの数え上げから、言語の誕生、そして現代の計算機科学を巡り、最後にこれらが圏論という数学言語でどのように定式化されるかを探求します。",
       explanation: (
         <div className="placard-text">
           <p>
             <strong>存在論（オントロジー）ギャラリー</strong>へようこそ。
           </p>
           <p>
-            数学とはその究極の基盤において、<strong>「自由生成 (Free Generation)」</strong>と<strong>「崩壊・商化 (Collapse / Quotienting)」</strong>の構造的サイクルその事です。
+            数学とはその究極の基盤において、<strong>「自由生成 (Free Generation)」</strong>と<strong>「崩壊・商化 (Collapse / Quotienting)」</strong>の構造的サイクルそのものです。
           </p>
           <p>
-            本ツアーでは、最初にこの絶対的なサイクルを最もシンプルで直感的な言葉で体験したのち、後半の部屋で圏論（カテゴリー論）という数学的言語を用いた定式化を見ていきます。
+            この対話的な認知の往復は、現代の数学者が作り出した抽象概念ではありません。百万年前の原始的な数え上げから、言葉の創造、デジタル回路に至るまで、人類の知性の歴史そのものです。
           </p>
         </div>
       )
     },
     {
       id: 2,
-      title: "II. 自由生成：純粋な構文の誕生",
-      subtitle: "規則を持たず、文字を自由に組み合わせて並べる行為。",
-      audioText: "第2ステーション、自由生成。最もシンプルな言葉で言えば、自由生成とは文字や記号を一切の制限やルールなしに自由に並べる行為です。例えば文字x, y, zがあるとき、それらを組み合わせて並べたすべての文字列、つまり、x、y、xy、xyzなどの単語の集まりを作ることができます。これが純粋な構文です。右側のワークスペースで文字を追加し、生成を実行して自由な文字列を作ってみてください。",
+      title: "II. 数え上げの黎明：石ころと刻み目 (百万年前)",
+      subtitle: "無制限に刻み目を打つ「自由生成」と、個数へ折りたたむ「商化」。",
+      audioText: "第2ステーション、百万年前の数え上げ。私たちの祖先は、小石を並べたり、骨に刻み目を刻んだりして数量を記録しました。刻み目を打つ行為は、純粋に自由な構文の生成です。しかし、バラバラの刻み目そのものは役に立ちません。これを「5頭のマンモス」や「3日間の移動」という一つの数字や価値へと折りたたんで理解する行為、これこそが最初の商化、つまり collapsed quotienting です。右側で刻み目を増やし、数え上げをシミュレートしてください。",
       explanation: (
         <div className="placard-text">
           <p>
-            最もシンプルな言葉で言えば、<strong>自由生成 (Free Generation)</strong> とは、一切のルールや制限を課さずに、文字や要素を自由に組み合わせて並べる行為です。
+            百万年前、私たちの祖先は小石を集めたり、骨に<strong>刻み目（ノッチ）</strong>を刻み始めました。
           </p>
           <p>
-            例えば、文字の集まり <code>{'{'} {setElements.map(e => e.label).join(', ')} {'}'}</code> があるとき、これらから作られるすべての可能な「文字列」（単語のリスト）を書き出します。
+            - <strong>自由生成 (Free Generation)</strong>: ルールを課さずに刻み目 <code>I, I, I, I...</code> を無数に刻んでいく行為。
+            <br />
+            - <strong>商化・崩壊 (Quotient Collapse)</strong>: バラバラの刻み目たちを、「5頭の獲物」のように一つの概念や数字へと折りたたみ、共通の価値に還元する行為。
           </p>
           <p>
-            右側のワークスペースで文字を増やしたり、生成を実行して、 unconstrained（制約のない）な文字列の空間を作ってみてください。
+            右側のワークスペースで刻み目 <code>I</code> を増やし、数を表記する構文を生成してみましょう。
           </p>
         </div>
       )
     },
     {
       id: 3,
-      title: "III. 商化・崩壊：方程式と評価",
-      subtitle: "文字列をルールに従って積へと折りたたむ行為。",
-      audioText: "第3ステーション、商化・崩壊。自由に生成された無限の文字列は、ルールや方程式を課すことで、より単純な一つの値へと収縮させることができます。例えば、ハイフンで区切られた文字の列を入力し、それを一つに結合するルールを適用すると、文字列全体が一つの積へと崩壊します。これが「商化」あるいは「Collapse」の概念です。右側で文字列を入力し、崩壊させてみましょう。",
+      title: "III. 言語の誕生：アルファベットと意味論 (古代)",
+      subtitle: "アルファベットから無限の文を生成し、共通概念へと崩壊させる。",
+      audioText: "第3ステーション、言語の誕生。人類は少数の音や文字からなるアルファベットを手に入れました。ここから私たちは無限の言葉や文を自由に紡ぎ出すことができます。これが無制限の構文生成です。しかし、綴りや言い回しが違っても、伝えたい核心的な概念は一つに収縮します。異なった構文が、意味という一つの商集合へと崩壊する。これこそが言語の意味論の正体です。右側で文字列を入力し、崩壊させてみましょう。",
       explanation: (
         <div className="placard-text">
           <p>
-            自由に生成された無限の文字列は、ルールや方程式を課すことで、より単純な一つの値へと収縮させることができます。これを<strong>商化・崩壊 (Quotient Collapse)</strong> と呼びます。
+            古代、人類は少数の文字（アルファベット）から無限の文や単語を生成する能力を獲得しました。
           </p>
           <p>
-            例えば、バラバラの文字列を入力し、それらを「結合する（積を求める）」という規則を適用すると、文字列全体が一つの積へと畳み込まれます。
+            - <strong>自由生成</strong>: 限られた記号を並べて、無数の文字列（構文）を作る行為。
+            <br />
+            - <strong>商化・崩壊</strong>: 異なる文字の並びや表現を、シノニム（同義語）や「共通の意味」という一つの同値クラスに折りたたむ行為。
           </p>
           <p>
-            右側のワークスペースにハイフン区切りの文字を入力して、余分な構文情報が評価されて一つの積へと崩壊する動きを体験してください。
+            右側のワークスペースにハイフンで区切った言葉を入力し、構文が意味論（積）へと崩壊する関係を体験してください。
           </p>
         </div>
       )
     },
     {
       id: 4,
-      title: "IV. 双対の戯れ：包摂と評価のダイナミクス",
-      subtitle: "要素を埋め込む単位と、式を折りたたむ余単位。",
-      audioText: "第4ステーション、包摂と評価。自由生成と崩壊は、互いに鏡合わせの双対な関係です。要素xをただ一文字の単語へと埋め込む行為ηと、複数の単語の列を掛け合わせて一つの結果へと折りたたむ行為εは、常に連動しています。埋め込みと折りたたみを同時に実行して、その連動を確かめてみましょう。",
+      title: "IV. アルゴリズムの時代：構文木とコンパイル (現代)",
+      subtitle: "コード構文を生成し、コンピューターで評価して値へ崩壊させる。",
+      audioText: "第4ステーション、現代の計算機。私たちはプログラムを書くとき、数式やコードの構文木を自由に組み立てます。コンパイラや実行エンジンは、この構文の木を二項演算に従って再帰的に折りたたみ、最終的な実行結果という一つのデータへと崩壊させます。包摂ηは変数を構文に割り当てることであり、評価εはコードを実行することに他なりません。",
       explanation: (
         <div className="placard-text">
           <p>
-            自由生成と崩壊は、互いに鏡合わせの<strong>双対な（Dual）関係</strong>にあります。
+            現代のコンピューター科学においても、このサイクルは不変です。
           </p>
           <p>
-            - <strong>包摂（Unit η）</strong>: 生の要素をそのまま一文字の文字列（単語）として式に埋め込む行為。
+            - <strong>自由生成</strong>: 変数や演算子からプログラムの<strong>抽象構文木 (AST)</strong> を自由に生成する。
             <br />
-            - <strong>評価（Counit ε）</strong>: 自由に並べられた文字列の羅列を、演算によって実際の値へと折りたたむ（崩壊させる）行為。
+            - <strong>商化・崩壊</strong>: コンパイラやCPUが二項演算に沿って構文木を評価 (evaluation) し、最終的な出力値へと収縮させる。
           </p>
           <p>
-            これらは同じコインの裏表であり、すべての数学的関係はこのダイナミクスから生まれます。
+            コードの記述と実行のダイナミクスを、右側のシミュレーターで確認してください。
           </p>
         </div>
       )
@@ -275,17 +326,17 @@ export default function AdjunctionVisualizer({ language }: { language: 'en' | 'j
     {
       id: 5,
       title: "V. 定式化：集合とモノイドの圏",
-      subtitle: "存在論を定式化するためのオブジェクトと構造の圏。",
-      audioText: "第5ステーション、定式化。ここから私たちは数学的枠組みとして圏論を導入します。構造のない生の要素の集まりを集合の圏Cとし、二項演算と単位元を持つ代数的構造をモノイドの圏Dと呼びます。自由生成とは集合をモノイドへ移す関手Fであり、崩壊や忘却とはモノイドから演算を忘れて集合へ戻す関手Uです。ボタンを押して、この2つの領域間の変換を実行してください。",
+      subtitle: "人類の認知の往復を、数学的なオブジェクトの接続として記述する。",
+      audioText: "第5ステーション、定式化。この百万年の知性の往復を、圏論を用いて正式に定義します。生の刻み目やアルファベットの世界を集合の圏Cとし、結合ルールを持つ体系をモノイドの圏Dと呼びます。自由生成は集合をモノイドにする関手Fであり、崩壊は構造を忘れる関手Uです。ボタンを押して、2つの世界の変換を実行してください。",
       explanation: (
         <div className="placard-text">
           <p>
-            ここから、この存在論のダイナミクスを数学的に記述するために<strong>圏論 (Category Theory)</strong> を導入します。
+            人類の百万年の認知の歩みを、数学的枠組みである<strong>圏論 (Category Theory)</strong> を用いて正式に記述します。
           </p>
           <p>
-            - <strong>集合の圏 C (Sets)</strong>: 演算を持たない、生の要素 <strong>X</strong> の世界。
+            - <strong>集合の圏 C (Sets)</strong>: 演算を持たない、生の要素 <strong>X</strong> （刻み目、文字、変数）の領域。
             <br />
-            - <strong>モノイドの圏 D (Monoids)</strong>: 演算（積）と単位元を持つ、構造化された <strong>M</strong> の世界。
+            - <strong>モノイドの圏 D (Monoids)</strong>: 結合規則を持つ、構造化された <strong>M</strong> （数、単語、計算結果）の領域。
           </p>
           <p>
             自由生成は集合をモノイドへ移す<strong>自由関手 F</strong> であり、崩壊はモノイドから構造を取り除く<strong>忘却関手 U</strong> です。
@@ -296,12 +347,12 @@ export default function AdjunctionVisualizer({ language }: { language: 'en' | 'j
     {
       id: 6,
       title: "VI. 定式化：随伴 duality (F ⊣ U)",
-      subtitle: "自由生成と崩壊を完璧に統合する自然同型。",
-      audioText: "第6ステーション、随伴の対。FがUの左随伴であることを示すこの定式化は、自由モノイドからのモノイド準同型写像の集合と、元の集合からの写像の集合の間に完全な自然同型が存在することを主張します。これにより、私たちの直感的な「自由生成して崩壊させる」存在論的ループが、圏論という究極の言語によって完璧に証明されます。",
+      subtitle: "自由生成と商化崩壊を完璧に統合する自然同型。",
+      audioText: "最終ステーション、随伴。FがUの左随伴であることを示すこの定式化は、自由モノイドからのモノイド準同型写像の集合と、元の集合からの写像の集合の間に完全な自然同型が存在することを証明します。骨の刻み目から始まった人類の認知のループが、随伴という数学の最も美しい橋によって完成します。",
       explanation: (
         <div className="placard-text">
           <p>
-            私たちの直感的な「自由生成して崩壊させる」存在論的ループは、圏論によって<strong>随伴 (Adjunction)</strong> という形で定式化されます。
+            私たちの直感的な「自由生成して崩壊させる」存在論的ループは、圏論によって<strong>随伴 (Adjunction)</strong> という形で統合されます。
           </p>
           <p>
             <strong>F ⊣ U</strong> は、次の自然同型を示します：
@@ -311,7 +362,7 @@ export default function AdjunctionVisualizer({ language }: { language: 'en' | 'j
             </span>
           </p>
           <p>
-            これは、自由モノイド上のすべての準同型写像（崩壊のルール）が、元の生の要素 <strong>X</strong> をどこに送るかという単なる写像だけで一意に決定されることを意味します。これが、存在論と数学が完全に一致する瞬間です。
+            これは、すべての collapsed rules（崩壊のルール）が、元の生の要素 <strong>X</strong> をどこに送るかという最初の写像だけで一意に決定されることを意味します。百万年前に小石の山を数え始めた人類の思考の必然が、数学的に証明される瞬間です。
           </p>
         </div>
       )
@@ -319,9 +370,9 @@ export default function AdjunctionVisualizer({ language }: { language: 'en' | 'j
   ] : [
     {
       id: 1,
-      title: "I. Gallery Entrance: The Ontological Cycle",
-      subtitle: "The absolute nature of mathematical existence.",
-      audioText: "Welcome to the Ontology Museum Tour. At its ultimate foundation, mathematics is the structural cycle of Free Generation and Collapse or Quotienting. Every mathematical system is constructed by first freely generating a syntax or space of elements, and then collapsing it by imposing relations and equations. In this tour, we will explore this cycle in the simplest intuitive terms first, and cover the category-theoretic formalization later.",
+      title: "I. Gallery Entrance: The Million-Year Duality",
+      subtitle: "How humanity discovered existence through syntax and collapse.",
+      audioText: "Welcome to the Ontology Museum Tour. At its ultimate foundation, mathematics is the structural cycle of Free Generation and Collapse or Quotienting. This duality is not a modern abstraction, but a cognitive engine that has operated in the human brain for a million years. Today, we journey from primitive tally marks to ancient language, modern computing, and finally, look at how Category Theory formalizes this loop using adjoint functors.",
       explanation: (
         <div className="placard-text">
           <p>
@@ -331,66 +382,70 @@ export default function AdjunctionVisualizer({ language }: { language: 'en' | 'j
             At its ultimate foundation, mathematics <strong>is</strong> the structural cycle of <strong>Free Generation</strong> and <strong>Collapse / Quotienting</strong>.
           </p>
           <p>
-            In this tour, we will first explore this absolute cycle in the simplest, most intuitive terms. In the later rooms, we will look at how Category Theory acts as the formal mathematical language representing this ontology.
+            This interactive loop is not an abstraction invented by modern mathematicians. It is the history of human intelligence itself—stretching from prehistoric tally marks to language creation, digital circuits, and beyond.
           </p>
         </div>
       )
     },
     {
       id: 2,
-      title: "II. Free Generation: Pure Syntax",
-      subtitle: "Arranging elements freely without any constraints or equations.",
-      audioText: "Stop 2, Free Generation. In the simplest terms, free generation is the act of taking raw symbols or elements and writing down all possible strings or words you can make from them, without imposing any rules or equations. For example, if you have letters x, y, and z, you generate all combinations like x, y, xy, and xyz. This is pure unconstrained syntax. Try adding points and triggering the generation in the workspace.",
+      title: "II. The Dawn of Counting: Pebbles and Notches (1M Years Ago)",
+      subtitle: "Generating notches freely and collapsing them into numeric quantities.",
+      audioText: "Stop 2, Tally Marks. A million years ago, our ancestors recorded quantities by collecting pebbles or carving notches on bones. Making a notch is pure free syntax generation. But raw notches are useless on their own. Collapsing them into a single numeric concept like five mammoths or three days of travel to trade or compare is the first quotient collapse. Try adding notches on the right and collapsing them.",
       explanation: (
         <div className="placard-text">
           <p>
-            In the simplest terms, <strong>Free Generation</strong> is the act of taking raw symbols or elements and writing down all possible strings or words you can make from them, without imposing any rules or equations.
+            A million years ago, our ancestors collected pebbles or carved <strong>notches (tally marks)</strong> on bones to record quantities.
           </p>
           <p>
-            For example, if you have the set of letters <code>{'{'} {setElements.map(e => e.label).join(', ')} {'}'}</code>, you generate the space of all combinations like <code>x</code>, <code>y</code>, <code>xy</code>, <code>xyz</code>. This is pure, unconstrained syntax.
+            - <strong>Free Generation</strong>: Carving notches <code>I, I, I, I...</code> freely onto a bone with no constraints.
+            <br />
+            - <strong>Quotient Collapse</strong>: Folding those discrete marks into a single numeric value (e.g. "5 mammoths") to trade, compare, or share.
           </p>
           <p>
-            Try adding points and triggering the generation on the right to see this syntax space form.
+            On the right, add notches <code>I</code> to generate a tally syntax, and click Next to see how we collapse them.
           </p>
         </div>
       )
     },
     {
       id: 3,
-      title: "III. Quotient Collapse: Equations and Semantics",
-      subtitle: "Shrinking sequences of elements into single evaluated products.",
-      audioText: "Stop 3, Quotient Collapse. Once you have freely generated strings, you can collapse or shrink them under equations or multiplication rules. For example, when you take a string of letters separated by hyphens and collapse it, the extra sequence information is evaluated and folded into a single consolidated product. This is quotient collapse. Try entering a hyphenated string on the right and collapsing it.",
+      title: "III. The Birth of Language: Alphabet & Semantics (Ancient Eras)",
+      subtitle: "Generating infinite strings of text and collapsing them into shared meaning.",
+      audioText: "Stop 3, Language. Humanity created alphabets with a small set of symbols. From this, we freely generate infinite words and sentences. This is unconstrained syntax. However, many different sentence configurations collapse into the exact same semantic idea or synonym. This is quotient collapse at the core of human communication. Try entering a hyphenated string on the right and collapsing it.",
       explanation: (
         <div className="placard-text">
           <p>
-            Once you have freely generated strings, you can collapse or shrink them under equations or multiplication rules. We call this <strong>Quotient Collapse</strong>.
+            In ancient eras, humanity created alphabets to generate infinite sentences and text configurations.
           </p>
           <p>
-            For example, taking a string of letters and applying a "multiplication" or "concatenation" rule folds the sequence into a single evaluated product.
+            - <strong>Free Generation</strong>: Arranging a small set of letters to write down infinite sentences (syntax).
+            <br />
+            - <strong>Quotient Collapse</strong>: Collapsing multiple formulations or synonyms under a single, shared definition (semantics/meaning).
           </p>
           <p>
-            Try entering a hyphenated string on the right (e.g. <code>x-y-z</code>) and collapsing it to see how syntax is reduced to semantic values.
+            Enter a hyphenated word sequence on the right to simulate syntax collapsing into a single semantic product.
           </p>
         </div>
       )
     },
     {
       id: 4,
-      title: "IV. The Dual Play: Inclusion & Evaluation",
-      subtitle: "How embedding single elements and folding strings act in tandem.",
-      audioText: "Stop 4, Inclusion and Evaluation. Free generation and collapse are dual mirror images. The inclusion mapping η embeds raw generators into the free string space as singletons, and the evaluation mapping ε collapses sequences of elements into actual values. They are two sides of the same coin.",
+      title: "IV. The Algorithmic Era: Syntax Trees & Evaluation (Modern)",
+      subtitle: "Generating abstract syntax trees and collapsing them into values.",
+      audioText: "Stop 4, Modern Computing. When we write programs, we freely assemble variables and operators into complex syntax trees. The CPU or compiler then collapses this tree using binary operations, reducing it into a single computed output value. Inclusion eta allocates variables, and evaluation epsilon executes the code. Experience this in the simulator.",
       explanation: (
         <div className="placard-text">
           <p>
-            Free generation and collapse are dual mirror images of each other:
+            Modern computer science follows the exact same cognitive cycle.
           </p>
           <p>
-            - <strong>Inclusion (Unit η)</strong>: Taking raw elements and embedding them as singleton words in the syntax.
+            - <strong>Free Generation</strong>: Assembling code and variables into nested <strong>Abstract Syntax Trees (ASTs)</strong>.
             <br />
-            - <strong>Evaluation (Counit ε)</strong>: Collapsing freely generated strings by multiplying them out into actual values.
+            - <strong>Quotient Collapse</strong>: Compiling and executing the code, folding the syntax tree down recursively into a single computed value.
           </p>
           <p>
-            Every mathematical structure and equation arises from this fundamental play.
+            Observe this execution loop in the interactive simulator on the right.
           </p>
         </div>
       )
@@ -398,29 +453,29 @@ export default function AdjunctionVisualizer({ language }: { language: 'en' | 'j
     {
       id: 5,
       title: "V. Formalization: Categories of Sets & Monoids",
-      subtitle: "Representing our ontology with objects and structured categories.",
-      audioText: "Stop 5, Categories of Sets and Monoids. Now we formalize our intuition. We define Category C as the world of Sets containing raw unstructured elements, and Category D as Monoids containing binary multiplication and identity. Free generation is represented as the Free Functor F, and collapse is represented as the Forgetful Functor U which strips monoids back to raw sets. Use the buttons on the right to navigate between these worlds.",
+      subtitle: "Representing our cognitive cycle with objects and structured categories.",
+      audioText: "Stop 5, Categories. We now formalize this million-year-old journey using Category Theory. The world of raw elements, notches, or variables is represented as Category C of Sets. The world of structured operations, concatenation, or numbers is Category D of Monoids. Functor F generates structure, and Functor U forgets it. Map between them on the right.",
       explanation: (
         <div className="placard-text">
           <p>
-            Now we introduce <strong>Category Theory</strong> to formalize this ontological cycle mathematically.
+            We now introduce <strong>Category Theory</strong> to formalize this cognitive loop mathematically.
           </p>
           <p>
-            - <strong>Category C (Sets)</strong>: The world of plain elements <strong>X</strong> without algebraic structure.
+            - <strong>Category C (Sets)</strong>: The world of raw elements <strong>X</strong> (notches, letters, variables) without structure.
             <br />
-            - <strong>Category D (Monoids)</strong>: The world of structured monoids <strong>M</strong> with associative multiplication and identity.
+            - <strong>Category D (Monoids)</strong>: The world of structured objects <strong>M</strong> (counts, words, values) with associative multiplication.
           </p>
           <p>
-            Free generation is modelled as the <strong>Free Functor F</strong> (Left Adjoint), and collapse is modelled as the <strong>Forgetful Functor U</strong> (Right Adjoint).
+            Free generation is modelled as the <strong>Free Functor F</strong>, and collapse is modelled as the <strong>Forgetful Functor U</strong>.
           </p>
         </div>
       )
     },
     {
       id: 6,
-      title: "VI. Formalization: The Adjunction Duality (F ⊣ U)",
-      subtitle: "The natural isomorphism uniting generation and quotienting.",
-      audioText: "Stop 6, The Adjunction Duality. The left adjoint F and right adjoint U form an adjunction. This asserts a natural isomorphism, hom(F(X), M) isomorphic to hom(X, U(M)). This means defining structure-preserving maps out of the free monoid is identical to choosing where the raw elements map. The ontology is complete.",
+      title: "VI. Formalization: The Adjunction Bridge (F ⊣ U)",
+      subtitle: "The natural isomorphism uniting notation and meaning.",
+      audioText: "Stop 6, The Adjunction Duality. The left adjoint F and right adjoint U form an adjunction. This asserts a natural isomorphism, hom(F(X), M) isomorphic to hom(X, U(M)). This means defining structure-preserving maps out of the free monoid is identical to choosing where the raw elements map. The million-year-old loop of counting bone notches is mathematically complete.",
       explanation: (
         <div className="placard-text">
           <p>
@@ -434,7 +489,7 @@ export default function AdjunctionVisualizer({ language }: { language: 'en' | 'j
             </span>
           </p>
           <p>
-            This states that specifying a homomorphism (collapse rules) out of a free monoid is exactly equivalent to choosing where the raw generators in <strong>X</strong> map. Our intuitive ontological loop is mathematically complete.
+            This states that specifying a collapsed evaluation map out of a free structure is identical to choosing where the raw generators in <strong>X</strong> map. The cognitive circle that began with notch-carving a million years ago is mathematically unified.
           </p>
         </div>
       )
@@ -590,18 +645,18 @@ export default function AdjunctionVisualizer({ language }: { language: 'en' | 'j
             </div>
           )}
 
-          {/* STOP 2: Category C Sets (Intuitive Free Generation) */}
+          {/* STOP 2: The Dawn of Counting (Pebbles & Notches) */}
           {currentStop === 2 && (
             <div className="animate-pop-in" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between', height: '100%', width: '100%' }}>
               <div>
                 <div className="workspace-title-bar">
-                  <h4 className="workspace-title">{language === 'en' ? 'Set X Workspace' : '集合 X ワークスペース'}</h4>
+                  <h4 className="workspace-title">{language === 'en' ? 'Notch Generator (Syntax)' : 'ノッチ生成子（構文）'}</h4>
                   <div className="workspace-controls">
                     <button onClick={addElement} className="btn btn-primary">
-                      {language === 'en' ? '+ Add Point' : '+ 要素を追加'}
+                      {language === 'en' ? '+ Carve Notch' : '+ 刻み目を刻む'}
                     </button>
                     <button onClick={clearElements} className="btn btn-secondary" style={{ borderColor: 'rgba(239, 68, 68, 0.3)', color: 'var(--error)' }}>
-                      {language === 'en' ? 'Reset Set' : 'リセット'}
+                      {language === 'en' ? 'Clear Notches' : 'ノッチを消去'}
                     </button>
                   </div>
                 </div>
@@ -609,13 +664,14 @@ export default function AdjunctionVisualizer({ language }: { language: 'en' | 'j
                 <div className="workspace-canvas">
                   {setElements.length === 0 ? (
                     <span className="empty-state">
-                      {language === 'en' ? 'Set is empty. Add a point!' : '集合が空です。要素を追加してください！'}
+                      {language === 'en' ? 'No notches carved yet.' : '刻み目がまだありません。'}
                     </span>
                   ) : (
-                    setElements.map(e => (
+                    setElements.map((e, index) => (
                       <div
-                        key={e.id}
+                        key={index}
                         className="set-element floating-node"
+                        style={{ borderStyle: 'dashed', borderRadius: '4px', width: '2rem', height: '3.5rem', fontFamily: 'monospace' }}
                       >
                         {e.label}
                       </div>
@@ -625,9 +681,9 @@ export default function AdjunctionVisualizer({ language }: { language: 'en' | 'j
               </div>
               
               <div className="workspace-footer">
-                <span>{language === 'en' ? 'Populate the set and click next to generate structure.' : '集合要素を設定し、次の室に進んで構造を生成してください。'}</span>
+                <span>{language === 'en' ? 'Carve notches freely, then proceed to Room III to collapse them.' : 'ノッチを自由に刻んだら、第3室に進んで数へ折りたたんでください。'}</span>
                 <button onClick={nextStop} className="btn btn-primary">
-                  {language === 'en' ? 'Go to Generation' : '生成室へ'} <ChevronRight size={10} />
+                  {language === 'en' ? 'Go to Collapse' : '崩壊・商化室へ'} <ChevronRight size={10} />
                 </button>
               </div>
             </div>
@@ -642,8 +698,8 @@ export default function AdjunctionVisualizer({ language }: { language: 'en' | 'j
                 </h4>
                 <p className="placard-text" style={{ fontSize: '0.8rem', marginBottom: '1rem' }}>
                   {language === 'en'
-                    ? 'Enter a string of symbols separated by hyphens (e.g. x-y-z) and collapse them under multiplication rules:'
-                    : 'ハイフンで区切られた記号の列を入力し、乗法ルールに従って畳み込み崩壊させてください：'
+                    ? 'Enter hyphenated tally marks (e.g. I-I-I) or words, and collapse them into a single numeric concept or meaning:'
+                    : 'ハイフンで区切られたノッチ（例: I-I-I）や単語を入力し、二項演算（積）によって一つの概念へ崩壊させてください：'
                   }
                 </p>
                 <form onSubmit={handleCounitCollapse} className="counit-form">
@@ -651,7 +707,7 @@ export default function AdjunctionVisualizer({ language }: { language: 'en' | 'j
                     type="text"
                     value={counitInput}
                     onChange={e => setCounitInput(e.target.value)}
-                    placeholder="x-y-z"
+                    placeholder="I-I-I"
                     className="input-text"
                     required
                   />
@@ -665,7 +721,7 @@ export default function AdjunctionVisualizer({ language }: { language: 'en' | 'j
                     <div className="counit-result-box" style={{ width: '100%', border: 'none', background: 'transparent', minHeight: 'auto' }}>
                       {counitResult ? (
                         <span className="counit-val-result flex items-center gap-1.5" style={{ color: 'var(--success)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                          <CheckCircle2 size={16} /> {language === 'en' ? 'Product:' : '積の結果:'} <span className="font-mono text-secondary ml-2 text-base">{counitResult}</span>
+                          <CheckCircle2 size={16} /> {language === 'en' ? 'Product:' : '評価結果:'} <span className="font-mono text-secondary ml-2 text-base">{counitResult}</span>
                         </span>
                       ) : (
                         <span className="counit-loading-text">
@@ -696,8 +752,8 @@ export default function AdjunctionVisualizer({ language }: { language: 'en' | 'j
                 </div>
 
                 <div className="unit-list" style={{ maxHeight: '140px' }}>
-                  {setElements.map(e => (
-                    <div key={e.id} className="unit-row">
+                  {setElements.map((e, index) => (
+                    <div key={index} className="unit-row">
                       <span className="unit-val-src">{e.label}</span>
                       <ArrowRight size={12} className="text-text-muted" />
                       <span className="unit-val-target">
@@ -764,7 +820,7 @@ export default function AdjunctionVisualizer({ language }: { language: 'en' | 'j
               <p className="bridge-text">
                 {language === 'en'
                   ? 'Universal property of free monoids. Mapping plain elements to any monoid automatically, uniquely induces a full structure-preserving Monoid Homomorphism out of the Free Monoid.'
-                  : '自由モノイドの普遍的性質。構造を持たない集合の要素から他のモノイドへの写像を定義すると、それは自動的かつ一意に自由モノイドからの構造保存準同型写像を誘起します。'
+                  : '自由モノイドの普遍的性質。構造を持たない集合의 要素から他のモノイドへの写像を定義すると、それは自動的かつ一意に自由モノイドからの構造保存準同型写像を誘起します。'
                 }
               </p>
             </div>

@@ -3,6 +3,7 @@ import AdjunctionVisualizer from './components/AdjunctionVisualizer';
 import Hall3Visualizer from './components/Hall3Visualizer';
 import Hall5Visualizer from './components/Hall5Visualizer';
 import Hall10Visualizer from './components/Hall10Visualizer';
+import FoundationsVisualizer from './components/FoundationsVisualizer';
 import { roomsData } from './data/curriculumData';
 
 const wings = [
@@ -29,6 +30,12 @@ const wings = [
     nameEn: 'Wing D: Category Formalization',
     nameJa: 'D翼：圏論的定式化',
     rooms: [19, 20, 21, 22, 23, 24, 25]
+  },
+  {
+    id: 'F',
+    nameEn: 'Wing F: Foundational Concepts',
+    nameJa: 'F翼：基礎概念ライブラリ',
+    rooms: [26, 27, 28, 29, 30]
   }
 ];
 
@@ -46,7 +53,7 @@ export default function App() {
     if (typeof window !== 'undefined') {
       const params = new URLSearchParams(window.location.search);
       const roomVal = parseInt(params.get('exhibit') || '1', 10);
-      return (roomVal >= 1 && roomVal <= 25) ? roomVal : 1;
+      return (roomVal >= 1 && roomVal <= 30) ? roomVal : 1;
     }
     return 1;
   };
@@ -142,13 +149,15 @@ export default function App() {
       {/* Immersive Exhibit Room */}
       <main className="museum-main-viewport">
         {activeRoom === 9 ? (
-          <Hall3Visualizer language={language} onlyVisualizer={false} />
+          <Hall3Visualizer language={language} onlyVisualizer={false} onNavigate={setActiveRoom} />
         ) : activeRoom === 14 ? (
-          <Hall5Visualizer language={language} onlyVisualizer={false} />
+          <Hall5Visualizer language={language} onlyVisualizer={false} onNavigate={setActiveRoom} />
         ) : activeRoom === 25 ? (
-          <Hall10Visualizer language={language} forcedRoom={4} />
+          <Hall10Visualizer language={language} forcedRoom={4} onNavigate={setActiveRoom} />
+        ) : activeRoom >= 26 ? (
+          <FoundationsVisualizer language={language} forcedRoom={activeRoom} onNavigate={setActiveRoom} />
         ) : (
-          <AdjunctionVisualizer language={language} forcedRoom={activeRoom} />
+          <AdjunctionVisualizer language={language} forcedRoom={activeRoom} onNavigate={setActiveRoom} />
         )}
       </main>
     </div>

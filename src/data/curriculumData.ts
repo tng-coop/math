@@ -502,5 +502,110 @@ export const roomsData: Record<number, RoomData> = {
       history: "1954年に米田信夫がパリの駅でソーンダース・マックレーンに説明したことに由来します。哲学的には、構造主義の主張と共鳴します。孤立して存在するものはなく、あらゆる実体は宇宙と自身を結ぶ「矢印のネットワーク」によって定義されるのです。",
       exercises: "1. 2つの対象 $A, B$ の表現可能関手が同型 $h_A \\cong h_B$ であるならば、対象 $A$ と $B$ は圏内で同型であることを証明しなさい。（ヒント：米田埋め込みが充満忠実であること）\n2. 数式 $\\text{Nat}(h_A, X) \\cong X(A)$ の物理的・哲学的な意味を説明しなさい。"
     }
+  },
+  26: {
+    id: 26,
+    nameEn: "Concept I: Free Generation",
+    nameJa: "概念I：自由生成（構文の構築）",
+    thesisEn: "Constructing structures without constraints. Generating words, terms, and syntax tree sequences.",
+    thesisJa: "制約なしでの構造の構築。単語、項、抽象構文木の列の生成。",
+    image: "/images/lebombo_bone.jpg",
+    imageAlt: "Lebombo bone notches representing free generation of syntax",
+    en: {
+      narrative: "Free generation is the act of creating syntax. In mathematics, we start with a set of raw elements—called generators—and allow ourselves to combine them in every possible sequence or tree structure, without any rules or equations to simplify them. The resulting structure is the 'free' object, containing all possible syntactic descriptions of our world. It represents pure syntax and potential, before meaning is resolved.",
+      rigor: "Given a set of generators $X$ in the category of Sets, the free functor $F: Set \\to Mon$ constructs the free monoid $F(X) = X^*$, which is the set of all finite strings of elements in $X$, with concatenation as the binary operation and the empty string $\\epsilon$ as the identity. No two distinct strings in $X^*$ are identified; they are structurally distinct terms.",
+      history: "Foundational in formal languages (Chomsky hierarchy), logic (free terms), and algebra. Historically, this corresponds to the raw tally marks carved on bones or stones before any bundles or counting systems were established.",
+      exercises: "1. If $X = \\{a, b\\}$, list all elements of length 3 in the free monoid $F(X)$.\n2. Why is the empty string necessary to form a monoid?"
+    },
+    ja: {
+      narrative: "自由生成とは、構文（Syntax）を構築する行為です。数学において、私たちはまず「生成元」と呼ばれる生の要素の集合から出発し、それらを簡約するルールや方程式を一切設けずに、あらゆる可能な配列や木構造として組み合わせることを許容します。その結果得られる構造は「自由（Free）」な対象と呼ばれ、私たちの世界を表現しうるあらゆる記号的記述を含んでいます。意味が確定する前の、純粋な構文と可能性の現れです。",
+      rigor: "集合の圏における生成元の集合 $X$ に対し、自由関手 $F: Set \\to Mon$ は自由モノイド $F(X) = X^*$ を構築します。これは $X$ の要素のすべての有限長の文字列の集合であり、合成演算は文字列の連結、単位元は空文字 $\\epsilon$ です。$X^*$ における異なる文字列は決して同一視されず、構造的に区別されます。",
+      history: "形式言語（チョムスキー階層）、論理学（自由項）、代数学における基礎的概念です。歴史的には、数え方のシステムや束ねる規則が作られる前に、骨や石にただ刻み目を自由に入れていった行為に対応します。",
+      exercises: "1. $X = \\{a, b\\}$ のとき、自由モノイド $F(X)$ の長さ3の要素をすべて列挙しなさい。\n2. モノイドを構成するために空文字列が必要な理由を説明しなさい。"
+    }
+  },
+  27: {
+    id: 27,
+    nameEn: "Concept II: Mappings & Functions",
+    nameJa: "概念II：写像と関数（対等と変換）",
+    thesisEn: "Injection, Surjection, and Bijection. Defining correspondences and translations between sets.",
+    thesisJa: "単射、射影、全単射。集合間の対応関係と翻訳の定義。",
+    image: "/images/weaving_grid.jpg",
+    imageAlt: "Warp and weft intersections representing set mappings",
+    en: {
+      narrative: "Mappings are the bridges between objects. A function assigns to each element of a domain set exactly one element of a codomain set. By studying functions, we compare structures. If a function is injective (one-to-one), it preserves distinctness. If it is surjective (onto), it covers the target space. If it is bijective (both), it establishes a perfect correspondence—proving that the two sets are structurally identical in cardinality.",
+      rigor: "A function $f: A \\to B$ is injective if $f(x) = f(y) \\implies x = y$. It is surjective if $\\forall y \\in B, \\exists x \\in A$ such that $f(x) = y$. It is bijective if it is both injective and surjective. In $Set$, a bijection is an isomorphism, meaning there exists an inverse function $g: B \\to A$ such that $f \\circ g = id_B$ and $g \\circ f = id_A$.",
+      history: "Developed formally by Dirichlet and Cantor. Mappings are the basis of structural matching, historically seen in the design of weaving looms where warp and weft intersect according to strict mapping functions, and in ancient counting correspondences (one notch per sheep).",
+      exercises: "1. Give an example of a function that is injective but not surjective.\n2. Prove that the composition of two injective functions is injective."
+    },
+    ja: {
+      narrative: "写像（Mapping）とは、対象同士を結ぶ架け橋です。関数は、定義域の各要素に対して、終域の要素をちょうど1つ割り当てます。写像を調べることで、私たちは構造を比較することができます。単射（1対1）であれば異なる要素の区別が保存され、全射（余すところなくカバー）であればターゲットの空間全体が覆われます。全単射であれば完璧な対応関係が確立され、2つの集合のサイズ（基数）が等しいことが証明されます。",
+      rigor: "写像 $f: A \\to B$ が単射であるとは、$f(x) = f(y) \\implies x = y$ が成り立つことです。全射であるとは、すべての $y \\in B$ に対して $f(x) = y$ となる $x \\in A$ が存在することです。全単射であるとは、単射かつ全射であることです。圏 $Set$ において、全単射は同型射であり、逆写像 $g: B \\to A$ が存在します。",
+      history: "ディリクレやカントールによって形式化されました。写像は構造マッチングの基礎であり、歴史的には経糸と緯糸が厳密な写像ルールに従って交差する織機のデザインや、羊の群れとノッチの対応関係による古代の数え上げに見られます。",
+      exercises: "1. 単射であるが全射ではない写像の例を挙げなさい。\n2. 2つの単射の合成写像もまた単射であることを証明しなさい。"
+    }
+  },
+  28: {
+    id: 28,
+    nameEn: "Concept III: Quotients & Grouping",
+    nameJa: "概念III：商化と同値関係（意味論的縮退）",
+    thesisEn: "Partitioning spaces under equivalence relations. Grouping raw terms into semantic concepts.",
+    thesisJa: "同値関係による空間の分割。生の構文項を意味論的概念へグループ化・商化する。",
+    image: "/images/sumerian_tokens.jpg",
+    imageAlt: "Sumerian clay tokens representing quotient contracts",
+    en: {
+      narrative: "Quotienting is the act of creating semantics. When we have a large, free set of syntactic terms, we often want to say that different terms represent the same meaning (e.g. 5 notches and a clay token). We do this by defining an equivalence relation. The quotient space groups equivalent elements together into packets (equivalence classes). By quotienting, we ignore irrelevant syntactic details to extract core semantic concepts.",
+      rigor: "An equivalence relation $\\sim$ on a set $X$ is reflexive, symmetric, and transitive. The equivalence class of $x \\in X$ is $[x] = \\{y \\in X \\mid y \\sim x\\}$. The quotient set $X/\\sim$ is the set of all equivalence classes. The canonical projection $\\pi: X \\to X/\\sim$ maps each element $x$ to its equivalence class $[x]$, which is surjective.",
+      history: "Developed by Cauchy and equivalence algebraists. Historically, this corresponds to Sumerian accounting contracts where individual clay tokens quotiented continuous grain measures into discrete transactional units, or to synonym groups in language.",
+      exercises: "1. Define an equivalence relation on the set of integers $\\mathbb{Z}$ that produces exactly 3 equivalence classes.\n2. Prove that equivalence classes partition the original set $X$ into mutually disjoint subsets."
+    },
+    ja: {
+      narrative: "商化（Quotienting）とは、意味論（Semantics）を構築する行為です。構文上の表現が無数にあるとき、私たちはしばしば「表現が異なっていても意味は同じ（例：5本の刻み目と1個の粘土トークン）」とみなしたいと考えます。これを行うために、同値関係を定義します。商集合は、同値な要素を1つの束（同値類）にグループ化します。商化によって、無駄な表記の差を無視し、核心的な意味論を抽出できるのです。",
+      rigor: "集合 $X$ 上の同値関係 $\\sim$ は、反射律、対称律、推移律を満たします。要素 $x \\in X$ の同値類は $[x] = \\{y \\in X \\mid y \\sim x\\}$ です。商集合 $X/\\sim$ は、すべての同値類の集合です。正準射影 $\\pi: X \\to X/\\sim$ は、各要素 $x$ を同値類 $[x]$ へ送り、これは全射となります。",
+      history: "コーシーや同値代数研究者たちによって発展しました。歴史的には、バラバラな穀物の量を取引単位へ「同一視（商化）」したシュメールの粘土トークンや、言語における単語の同義語グループに対応します。",
+      exercises: "1. 整数全体の集合 $\\mathbb{Z}$ 上に、ちょうど3つの同値類を生成する同値関係を定義しなさい。\n2. 同値類が元の集合 $X$ を互いに素な部分集合へと分割（直和分割）することを示しなさい。"
+    }
+  },
+  29: {
+    id: 29,
+    nameEn: "Concept IV: Categories & Functors",
+    nameJa: "概念IV：圏と関手（構造的宇宙と架け橋）",
+    thesisEn: "Structuring objects and morphisms. Mapping between structural universes while preserving operations.",
+    thesisJa: "対象と射の構造化。構造演算を保存したまま、異なる構造的宇宙の間をマッピング（翻訳）する。",
+    image: "/images/yoneda_network.jpg",
+    imageAlt: "Category network showing maps and functors",
+    en: {
+      narrative: "A category is a mathematical universe. It contains objects (elements or structures) and morphisms (arrows representing mappings or relationships between them). To connect different mathematical universes, we use functors. A functor maps objects of one category to objects of another, and morphisms to morphisms, while preserving the composition and identity of arrows. Functors are structural translators.",
+      rigor: "A category $\\mathcal{C}$ consists of a class of objects $\\text{Ob}(\\mathcal{C})$, hom-sets $\\text{Hom}(A, B)$ of morphisms, an identity morphism $id_A$ for each object, and an associative composition operation. A functor $F: \\mathcal{C} \\to \\mathcal{D}$ maps objects $C \\in \\mathcal{C} \\to F(C) \\in \\mathcal{D}$ and morphisms $f: A \\to B \\to F(f): F(A) \\to F(B)$ such that $F(id_A) = id_{F(A)}$ and $F(g \\circ f) = F(g) \\circ F(f)$.",
+      history: "Introduced by Samuel Eilenberg and Saunders Mac Lane in 1945 to formalize topology and algebra. Category Theory provides a universal language for all of mathematics, replacing sets with relationships.",
+      exercises: "1. Explain why a functor must preserve identity morphisms.\n2. Is the identity mapping on any category a functor? Prove your answer."
+    },
+    ja: {
+      narrative: "圏（Category）とは、数学的な宇宙です。そこには「対象（対象物や構造）」と、それらの間の関係性・マッピングを表す「射（矢印）」が存在します。異なる数学的な宇宙同士を接続するために、私たちは「関手（Functor）」を使用します。関手は、ある圏の対象と射を別の圏の対象と射にマッピングし、矢印の合成や恒等射を完全に保存します。構造を保つ翻訳機です。",
+      rigor: "圏 $\\mathcal{C}$ は対象のクラス $\\text{Ob}(\\mathcal{C})$、射の集合 $\\text{Hom}(A, B)$、各対象の恒等射 $id_A$、および結合的な射の合成演算から構成されます。関手 $F: \\mathcal{C} \\to \\mathcal{D}$ は、対象 $C \\to F(C)$ および射 $f: A \\to B \\to F(f): F(A) \\to F(B)$ をマッピングし、$F(id_A) = id_{F(A)}$ および $F(g \\circ f) = F(g) \\circ F(f)$ を満たします。",
+      history: "1945年にサミュエル・アイレンベルグとソーンダース・マックレーンによって、トポロジーと代数学の定式化のために導入されました。圏論は、集合の代わりに「関係性」を基礎とすることで、全数学の共通言語を提供します。",
+      exercises: "1. 関手が恒等射を保存しなければならない理由を説明しなさい。\n2. 任意の圏における恒等写像は関手ですか？その答えを証明しなさい。"
+    }
+  },
+  30: {
+    id: 30,
+    nameEn: "Concept V: Adjunction & Duality",
+    nameJa: "概念V：随伴と双対性（対称的均衡）",
+    thesisEn: "$F \\dashv U$. The natural isomorphism between syntax (F) and semantics (U) mapping spaces.",
+    thesisJa: "$F \\dashv U$。構文（F）と意味論（U）の写像空間の間に横たわる自然同型（対称的バランス）。",
+    image: "/images/inca_quipu.jpg",
+    imageAlt: "Quipu threads representing the balance of adjunction duality",
+    en: {
+      narrative: "An adjunction is the ultimate mathematical duality. It connects a free functor $F$ (which generates syntax) and a forgetful functor $U$ (which strips structure back to raw elements). The adjunction $F \\dashv U$ asserts a perfect, symmetric translation between mapping out of a free structure and mapping raw elements. It proves that the entire behavior of a complex, quotiented semantic system is completely determined by how we map its raw, unstructured generators.",
+      rigor: "An adjunction between categories $\\mathcal{C}$ and $\\mathcal{D}$ consists of a pair of functors $F: \\mathcal{C} \\to \\mathcal{D}$ and $U: \\mathcal{D} \\to \\mathcal{C}$ and a natural isomorphism: \n  $$\\Phi_{X, Y}: \\text{Hom}_\\mathcal{D}(F(X), Y) \\cong \\text{Hom}_\\mathcal{C}(X, U(Y))$$\n  For every morphism $f: X \\to U(Y)$ in $\\mathcal{C}$, there is a unique morphism $\\bar{f}: F(X) \\to Y$ in $\\mathcal{D}$ such that $U(\\bar{f}) \\circ \\eta_X = f$, where $\\eta_X: X \\to U(F(X))$ is the unit natural transformation.",
+      history: "Discovered by Daniel Kan in 1958. It stands as one of the most powerful organizing concepts in mathematics, demonstrating that syntax and semantics are not opposing forces, but rather dual projections of the same truth.",
+      exercises: "1. Explain how the unit $\\eta_X$ behaves as the inclusion of generators.\n2. State the triangular identities that any unit and counit of an adjunction must satisfy."
+    },
+    ja: {
+      narrative: "随伴（Adjunction）とは、数学における究極の双対性です。構文を自由生成する「自由関手 $F$」と、構造を取り去って生の要素に戻す「忘却関手 $U$」を接続します。随伴 $F \\dashv U$ は、「自由生成された構造からの写像」と「生の要素からの写像」の間の完璧な対称的翻訳を可能にします。これは、複雑に商化された意味体系の挙動が、生の生成元のマッピング方法だけで完全に決定されることを証明しています。",
+      rigor: "圏 $\\mathcal{C}$ と $\\mathcal{D}$ の間の随伴は、対となる関手 $F: \\mathcal{C} \\to \\mathcal{D}$、 $U: \\mathcal{D} \\to \\mathcal{C}$、および次の自然同型から構成されます：\n  $$\\Phi_{X, Y}: \\text{Hom}_\\mathcal{D}(F(X), Y) \\cong \\text{Hom}_\\mathcal{C}(X, U(Y))$$\n  $\\mathcal{C}$ における任意の射 $f: X \\to U(Y)$ に対して、$\\mathcal{D}$ における一意の射 $\\bar{f}: F(X) \\to Y$ が存在し、$U(\\bar{f}) \\circ \\eta_X = f$ を満たします（$\\eta_X$ は単位自然変換です）。",
+      history: "1958年にダニエル・カンによって発見されました。構文（F）と意味（U）が対立するものではなく、同一の真理の双対写像であることを証明する、数学において最も強力な統一概念の1つです。",
+      exercises: "1. 単位元 $\\eta_X$ が「生成元の包含」としてどのように機能するか説明しなさい。\n2. 随伴の単位元と余単位元が満たさなければならない三角恒等式を述べなさい。"
+    }
   }
 };

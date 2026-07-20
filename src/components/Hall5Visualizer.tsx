@@ -480,7 +480,7 @@ const translations = {
 // Exhibit Component
 // ============================================================================
 
-export default function Hall5Visualizer({ language, onlyVisualizer = false }: { language: 'en' | 'ja', onlyVisualizer?: boolean }) {
+export default function Hall5Visualizer({ language, onlyVisualizer = false, onNavigate }: { language: 'en' | 'ja', onlyVisualizer?: boolean, onNavigate?: (room: number) => void }) {
   const activeRoomData = useMemo(() => {
     return roomsData[14] || roomsData[1];
   }, []);
@@ -1116,6 +1116,31 @@ export default function Hall5Visualizer({ language, onlyVisualizer = false }: { 
 
                 <div className="placard-text" style={{ fontSize: '0.85rem', lineHeight: '1.6', color: 'var(--text-muted)', marginBottom: '1.5rem', minHeight: '140px', whiteSpace: 'pre-line' }}>
                   <p>{renderHighlightedText(tabContent[activeTab])}</p>
+                </div>
+
+                {/* Foundational Concepts Quick Reference */}
+                <div className="tied-foundations" style={{ marginTop: '0rem', marginBottom: '1.5rem', borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: '1rem' }}>
+                  <span style={{ fontSize: '0.7rem', fontWeight: 'bold', color: 'var(--primary)', display: 'block', marginBottom: '0.5rem', textTransform: 'uppercase' }}>
+                    {language === 'en' ? 'Foundational References:' : '基礎概念リファレンス:'}
+                  </span>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.35rem' }}>
+                    {[
+                      { room: 26, nameEn: 'Free Gen', nameJa: '自由生成' },
+                      { room: 27, nameEn: 'Mappings', nameJa: '写像と関数' },
+                      { room: 28, nameEn: 'Quotients', nameJa: '商集合・同一視' },
+                      { room: 29, nameEn: 'Categories', nameJa: '圏と関手' },
+                      { room: 30, nameEn: 'Adjunctions', nameJa: '随伴と双対性' }
+                    ].map(item => (
+                      <button
+                        key={item.room}
+                        onClick={() => onNavigate && onNavigate(item.room)}
+                        className="btn-lang"
+                        style={{ fontSize: '0.625rem', padding: '3px 8px', borderRadius: '3px' }}
+                      >
+                        {language === 'en' ? item.nameEn : item.nameJa}
+                      </button>
+                    ))}
+                  </div>
                 </div>
               </>
             )}

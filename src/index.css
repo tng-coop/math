@@ -431,6 +431,14 @@ body {
   transition: all 0.2s ease;
   display: inline-block;
   color: var(--text-muted);
+  cursor: pointer;
+}
+
+.word-normal:hover {
+  color: #ffffff;
+  text-decoration: underline;
+  text-decoration-color: rgba(212, 175, 55, 0.5);
+  text-underline-offset: 3px;
 }
 
 /* Dynamic Exhibits Workspaces */

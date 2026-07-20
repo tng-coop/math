@@ -354,6 +354,8 @@ export default function AdjunctionVisualizer({ language }: { language: 'en' | 'j
         <span 
           key={idx} 
           className={isCurrent ? "word-highlight" : "word-normal"}
+          onClick={() => startSpeech(text, w.start)}
+          title={language === 'en' ? 'Click to play from here' : 'ここから再生'}
         >
           {w.text}
         </span>

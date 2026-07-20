@@ -236,70 +236,74 @@ export default function FoundationsVisualizer({ language, forcedRoom, onNavigate
 
   // Math equation renderer helper that splits into words/symbols for highlighting & click-to-seek
   const renderHighlightedText = (text: string) => {
-    const words = getSpokenWords(text, language);
-    let result: React.ReactNode[] = [];
-    let lastIdx = 0;
+    const parts = text.split(/(\$\$[^\$]+\$\$|\$[^\$]+\$)/g);
+    let currentPos = 0;
     
-    words.forEach((w, idx) => {
-      if (w.start > lastIdx) {
-        const betweenText = text.substring(lastIdx, w.start);
-        const parts = betweenText.split(/(\$\$[^\$]+\$\$|\$[^\$]+\$)/g);
-        parts.forEach((part, pidx) => {
-          if (part.startsWith('$$') && part.endsWith('$$')) {
-            result.push(<div key={`math-b-${idx}-${pidx}`} className="math-block font-serif text-center my-4 text-primary">{part.slice(2, -2)}</div>);
-          } else if (part.startsWith('$') && part.endsWith('$')) {
-            result.push(<span key={`math-i-${idx}-${pidx}`} className="math-inline font-serif text-secondary px-0.5">{part.slice(1, -1)}</span>);
-          } else {
-            result.push(part);
-          }
-        });
-      }
+    return parts.map((part, i) => {
+      const partStart = currentPos;
+      currentPos += part.length;
       
-      const isCurrent = currentCharIndex >= w.start && currentCharIndex < w.end;
-      
-      if (w.text.startsWith('$') && w.text.endsWith('$')) {
-        result.push(
-          <span 
-            key={`word-${idx}`} 
-            className={isCurrent ? "word-highlight" : "word-normal"}
-            onClick={() => startSpeech(text, w.start)}
+      if (part.startsWith('$$') && part.endsWith('$$')) {
+        const isCurrent = currentCharIndex >= partStart && currentCharIndex < partStart + part.length;
+        return (
+          <div 
+            key={i} 
+            className={`math-block font-serif text-center my-4 ${isCurrent ? 'text-secondary' : 'text-primary'}`}
+            onClick={() => startSpeech(text, partStart)}
             style={{ cursor: 'pointer' }}
             title={language === 'en' ? 'Click to play from here' : 'ここから再生'}
           >
-            <span className="math-inline font-serif text-secondary px-0.5">{w.text.slice(1, -1)}</span>
+            {part.slice(2, -2)}
+          </div>
+        );
+      } else if (part.startsWith('$') && part.endsWith('$')) {
+        const isCurrent = currentCharIndex >= partStart && currentCharIndex < partStart + part.length;
+        return (
+          <span 
+            key={i} 
+            className={`math-inline font-serif px-0.5 ${isCurrent ? 'word-highlight text-secondary' : 'text-secondary'}`}
+            onClick={() => startSpeech(text, partStart)}
+            style={{ cursor: 'pointer' }}
+            title={language === 'en' ? 'Click to play from here' : 'ここから再生'}
+          >
+            {part.slice(1, -1)}
           </span>
         );
       } else {
-        result.push(
-          <span 
-            key={`word-${idx}`} 
-            className={isCurrent ? "word-highlight" : "word-normal"}
-            onClick={() => startSpeech(text, w.start)}
-            style={{ cursor: 'pointer' }}
-            title={language === 'en' ? 'Click to play from here' : 'ここから再生'}
-          >
-            {w.text}
-          </span>
-        );
-      }
-      lastIdx = w.end;
-    });
-    
-    if (lastIdx < text.length) {
-      const remainingText = text.substring(lastIdx);
-      const parts = remainingText.split(/(\$\$[^\$]+\$\$|\$[^\$]+\$)/g);
-      parts.forEach((part, pidx) => {
-        if (part.startsWith('$$') && part.endsWith('$$')) {
-          result.push(<div key={`math-b-end-${pidx}`} className="math-block font-serif text-center my-4 text-primary">{part.slice(2, -2)}</div>);
-        } else if (part.startsWith('$') && part.endsWith('$')) {
-          result.push(<span key={`math-i-end-${pidx}`} className="math-inline font-serif text-secondary px-0.5">{part.slice(1, -1)}</span>);
-        } else {
-          result.push(part);
+        const words = getSpokenWords(part, language);
+        let result: React.ReactNode[] = [];
+        let lastIdx = 0;
+        
+        words.forEach((w, idx) => {
+          if (w.start > lastIdx) {
+            result.push(part.substring(lastIdx, w.start));
+          }
+          
+          const wordAbsoluteStart = partStart + w.start;
+          const wordAbsoluteEnd = partStart + w.end;
+          const isCurrent = currentCharIndex >= wordAbsoluteStart && currentCharIndex < wordAbsoluteEnd;
+          
+          result.push(
+            <span 
+              key={idx} 
+              className={isCurrent ? "word-highlight" : "word-normal"}
+              onClick={() => startSpeech(text, wordAbsoluteStart)}
+              style={{ cursor: 'pointer' }}
+              title={language === 'en' ? 'Click to play from here' : 'ここから再生'}
+            >
+              {w.text}
+            </span>
+          );
+          lastIdx = w.end;
+        });
+        
+        if (lastIdx < part.length) {
+          result.push(part.substring(lastIdx));
         }
-      });
-    }
-    
-    return result;
+        
+        return <span key={i}>{result}</span>;
+      }
+    });
   };
 
   // Stop 1: Append Free character

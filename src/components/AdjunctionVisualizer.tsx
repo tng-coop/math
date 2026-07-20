@@ -284,36 +284,76 @@ export default function AdjunctionVisualizer({ language, forcedRoom, onNavigate 
     return words;
   };
 
-  // Renders spoken words in Spans for real-time gold highlighting
+  // Math equation renderer helper that splits into words/symbols for highlighting & click-to-seek
   const renderHighlightedText = (text: string) => {
-    const words = getSpokenWords(text, language);
-    let result: React.ReactNode[] = [];
-    let lastIdx = 0;
+    const parts = text.split(/(\$\$[^\$]+\$\$|\$[^\$]+\$)/g);
+    let currentPos = 0;
     
-    words.forEach((w, idx) => {
-      if (w.start > lastIdx) {
-        result.push(text.substring(lastIdx, w.start));
-      }
+    return parts.map((part, i) => {
+      const partStart = currentPos;
+      currentPos += part.length;
       
-      const isCurrent = currentCharIndex >= w.start && currentCharIndex < w.end;
-      result.push(
-        <span 
-          key={idx} 
-          className={isCurrent ? "word-highlight" : "word-normal"}
-          onClick={() => startSpeech(text, w.start)}
-          title={language === 'en' ? 'Click to play from here' : 'ここから再生'}
-        >
-          {w.text}
-        </span>
-      );
-      lastIdx = w.end;
+      if (part.startsWith('$$') && part.endsWith('$$')) {
+        const isCurrent = currentCharIndex >= partStart && currentCharIndex < partStart + part.length;
+        return (
+          <div 
+            key={i} 
+            className={`math-block font-serif text-center my-4 ${isCurrent ? 'text-secondary' : 'text-primary'}`}
+            onClick={() => startSpeech(text, partStart)}
+            style={{ cursor: 'pointer' }}
+            title={language === 'en' ? 'Click to play from here' : 'ここから再生'}
+          >
+            {part.slice(2, -2)}
+          </div>
+        );
+      } else if (part.startsWith('$') && part.endsWith('$')) {
+        const isCurrent = currentCharIndex >= partStart && currentCharIndex < partStart + part.length;
+        return (
+          <span 
+            key={i} 
+            className={`math-inline font-serif px-0.5 ${isCurrent ? 'word-highlight text-secondary' : 'text-secondary'}`}
+            onClick={() => startSpeech(text, partStart)}
+            style={{ cursor: 'pointer' }}
+            title={language === 'en' ? 'Click to play from here' : 'ここから再生'}
+          >
+            {part.slice(1, -1)}
+          </span>
+        );
+      } else {
+        const words = getSpokenWords(part, language);
+        let result: React.ReactNode[] = [];
+        let lastIdx = 0;
+        
+        words.forEach((w, idx) => {
+          if (w.start > lastIdx) {
+            result.push(part.substring(lastIdx, w.start));
+          }
+          
+          const wordAbsoluteStart = partStart + w.start;
+          const wordAbsoluteEnd = partStart + w.end;
+          const isCurrent = currentCharIndex >= wordAbsoluteStart && currentCharIndex < wordAbsoluteEnd;
+          
+          result.push(
+            <span 
+              key={idx} 
+              className={isCurrent ? "word-highlight" : "word-normal"}
+              onClick={() => startSpeech(text, wordAbsoluteStart)}
+              style={{ cursor: 'pointer' }}
+              title={language === 'en' ? 'Click to play from here' : 'ここから再生'}
+            >
+              {w.text}
+            </span>
+          );
+          lastIdx = w.end;
+        });
+        
+        if (lastIdx < part.length) {
+          result.push(part.substring(lastIdx));
+        }
+        
+        return <span key={i}>{result}</span>;
+      }
     });
-    
-    if (lastIdx < text.length) {
-      result.push(text.substring(lastIdx));
-    }
-    
-    return result;
   };
 
 

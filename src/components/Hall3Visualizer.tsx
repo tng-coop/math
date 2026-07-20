@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { Play, Pause, Layers, RefreshCw, Square, FastForward, Rewind, BookOpen } from 'lucide-react';
+import { roomsData } from '../data/curriculumData';
 
 interface Point2D {
   x: number; // normalized [0, 1]
@@ -39,13 +40,17 @@ interface SpokenWord {
 let activeUtteranceRef: SpeechSynthesisUtterance | null = null;
 
 export default function Hall3Visualizer({ language, onlyVisualizer = false }: Hall3VisualizerProps) {
+  const activeRoomData = useMemo(() => {
+    return roomsData[9] || roomsData[1];
+  }, []);
+
   // Translations
   const t = useMemo(() => {
     const translations = {
       en: {
-        roomTitle: "Exhibits / Hall 3: Quotient Topology",
-        title: "The Quotient Torus",
-        subtitle: "Folding a 2D sheet into a 3D manifold via boundary gluing",
+        roomTitle: activeRoomData.nameEn,
+        title: activeRoomData.nameEn,
+        subtitle: activeRoomData.thesisEn,
         description1: "In topology, a quotient space is formed by gluing together points of a given space under an equivalence relation. Here, we start with a flat, two-dimensional square sheet and glue its opposite boundaries.",
         description2: "First, we glue the top boundary (Gold A) to the bottom boundary (Gold A) in the same direction. This forms a cylinder. Next, we glue the left boundary (Cyan B) to the right boundary (Cyan B), bending the cylinder to glue its circular ends. This yields a torus.",
         description3: "Move your cursor or tap over the 2D sheet to place a point. Observe its equivalence class: points on the boundaries or corners correspond to the exact same point in the glued quotient space. Watch them merge in 3D as the gluing stage increases.",
@@ -64,9 +69,9 @@ export default function Hall3Visualizer({ language, onlyVisualizer = false }: Ha
         boundaryB: "Boundary B (Left & Right → Torus)",
       },
       ja: {
-        roomTitle: "展示 / 第3室：商位相空間",
-        title: "商空間としてのトーラス",
-        subtitle: "境界の接着による2次元平面から3次元多様体への折り畳み",
+        roomTitle: activeRoomData.nameJa,
+        title: activeRoomData.nameJa,
+        subtitle: activeRoomData.thesisJa,
         description1: "トポロジー（位相幾何学）において、商位相空間とは、与えられた空間の点を同値関係に基づいて「接着」することによって形成される空間です。ここでは、平らな2次元の正方形シートから始め、その対向する境界を接着します。",
         description2: "まず、上部境界（金色 A）と下部境界（金色 A）を同じ向きに接着します。これにより円柱が形成されます。次に、左側境界（シアン B）と右側境界（シアン B）を接着し、円柱を曲げてその両端の円を接着します。これによりトーラス（ドーナツ型）が得られます。",
         description3: "2Dシート上をホバーまたはタップすると、点とその同値類が表示されます。境界上やコーナーにある点は、接着された商空間においてまったく同一の点に対応します。接着ステージを進めると、それらが3D空間で1つに融合していく様子を観察できます。",
@@ -79,31 +84,18 @@ export default function Hall3Visualizer({ language, onlyVisualizer = false }: Ha
         spin: "自動回転",
         reset: "点をリセット",
         equivalenceClass: "同値類",
-        instruction: "2Dシート上をホバーまたはタップして点を配置してください",
+        instruction: "2Dシートをホバーまたはタップして点を配置してください",
         dragPrompt: "3Dモデルをドラッグして回転できます",
         boundaryA: "境界 A (上下接着 → 円柱)",
         boundaryB: "境界 B (左右接着 → トーラス)",
       }
     };
     return translations[language];
-  }, [language]);
+  }, [language, activeRoomData]);
 
   const tabContent = useMemo(() => {
-    return {
-      en: {
-        narrative: "In geometry, we transition from discrete dots to continuous space. We begin with a flat 2D sheet containing infinite points (free generation). By identifying its boundary points—gluing the top edge to the bottom edge, and then the left edge to the right edge—we fold the sheet into a cylinder, and ultimately a torus (quotienting). Shape is the semantic result of quotienting continuous coordinates. This is the origin of geometric manifold structural contracts.",
-        rigor: "Let $X = [0,1] \\times [0,1]$ be the unit square in $\\mathbb{R}^2$ (equipped with the subspace topology). We define the equivalence relation $\\sim$ on $X$ by: $(x, 0) \\sim (x, 1)$ for all $x \\in [0,1]$, and $(0, y) \\sim (1, y)$ for all $y \\in [0,1]$. The quotient space $X/\\sim$ equipped with the quotient topology is homeomorphic to the 2-torus $\\mathbb{T}^2 = S^1 \\times S^1$.",
-        history: "Glued spaces appear historically in human weaving, basketry, and origami. Modern general relativity models the universe itself as a quotient space—where the syntax of flat Minkowski spacetime is bent, glued, and curved by the distribution of mass-energy.",
-        exercises: "1. If we identify opposite edges of a square but reverse the orientation of one glue line, what non-orientable quotient manifold is generated? (Answer: Klein Bottle or Möbius Strip).\n2. Prove that the quotient map from the square to the torus is continuous."
-      },
-      ja: {
-        narrative: "幾何学において、私たちは離散的な点から連続的な空間へと移行します。まず、無限の点を含む平らな2次元の正方形シートを用意します（自由生成）。そのシートの境界点同士を接着（上部と下部、次に左側と右側を同一視）することにより、円柱、そして最終的にはトーラス（ドーナツ型）へと折りたたみます（商化）。幾何学的な「図形」とは、連続的な座標を商化することによって生まれる意味論的結果なのです。",
-        rigor: "単位正方形 $X = [0,1] \\times [0,1] \\subset \\mathbb{R}^2$ に対し、同値関係 $(x, 0) \\sim (x, 1)$ および $(0, y) \\sim (1, y)$ を定義します。この同値関係から得られる商位相空間 $X/\\sim$ は、2次元トーラス $\\mathbb{T}^2 = S^1 \\times S^1$ と同相（Homeomorphic）になります。",
-        history: "接着された空間は、歴史的に機織り、籠編み、そして折り紙などの技術に現れます。現代の一般相対性理論は、宇宙そのものを商空間としてモデル化します。質量分布の「関係式」によって、平坦な時空の構文が曲げられ、接着されているのです。",
-        exercises: "1. 正方形の対向する辺を、片方の向きを反転させて接着したときに生成される向き付け不可能な商多様体は何ですか？（答え：クラインの壺、またはメビウスの帯）\n2. 正方形からトーラスへの商写像が連続写像であることを証明しなさい。"
-      }
-    }[language];
-  }, [language]);
+    return language === 'en' ? activeRoomData.en : activeRoomData.ja;
+  }, [activeRoomData, language]);
 
   // TTS States
   const [activeSpeechText, setActiveSpeechText] = useState<string | null>(null);
@@ -831,6 +823,12 @@ export default function Hall3Visualizer({ language, onlyVisualizer = false }: Ha
               </div>
               <h2 className="placard-title">{t.title}</h2>
               <h3 className="placard-subtitle">{t.subtitle}</h3>
+
+              {activeRoomData.image && (
+                <div className="placard-image-container" style={{ marginBottom: '1.25rem', width: '100%', borderRadius: '0.5rem', overflow: 'hidden', border: '1px solid rgba(255,255,255,0.08)' }}>
+                  <img src={activeRoomData.image} alt={activeRoomData.imageAlt || ''} style={{ width: '100%', height: 'auto', display: 'block' }} />
+                </div>
+              )}
 
               {/* Tab Selector */}
               <div className="placard-tabs" style={{ display: 'flex', gap: '0.35rem', marginBottom: '1.25rem', borderBottom: '1px solid rgba(255,255,255,0.08)', paddingBottom: '0.5rem' }}>

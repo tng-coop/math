@@ -4,6 +4,7 @@ import {
   FastForward, Rewind, ChevronRight, CheckCircle2,
   Info
 } from 'lucide-react';
+import { roomsData } from '../data/curriculumData';
 
 
 
@@ -57,22 +58,13 @@ export default function Hall10Visualizer({ language, forcedRoom }: { language: '
   const [burst, setBurst] = useState<boolean>(false);
 
   // Text-to-Speech (TTS) states
+  const activeRoomData = useMemo(() => {
+    return roomsData[25] || roomsData[1];
+  }, []);
+
   const tabContent = useMemo(() => {
-    return {
-      en: {
-        narrative: "We conclude with the most profound theorem in Category Theory: the Yoneda Lemma. In our core philosophy, we have seen how elements generate and relations quotient. The Yoneda Lemma takes this to the extreme: an object in a category has no intrinsic substance. Its entire identity, structure, and existence is completely and uniquely determined by observing its relationship to all other objects. Relationship is existence itself.",
-        rigor: "Let $\\mathcal{C}$ be a locally small category, and let $A$ be an object in $\\mathcal{C}$. The representable functor $h_A = \\text{Hom}(A, -): \\mathcal{C} \\to Set$ maps each object $Y$ to the set of morphisms $\\text{Hom}(A, Y)$. The Yoneda Lemma asserts that for any functor $X: \\mathcal{C} \\to Set$, there is a natural bijection:\n  $$\\text{Nat}(h_A, X) \\cong X(A)$$\n  This natural isomorphism maps a natural transformation $\\alpha: h_A \\Rightarrow X$ to the element $\\alpha_A(1_A) \\in X(A)$.",
-        history: "Named after Nobuo Yoneda, who explained it to Saunders Mac Lane at a Paris train station in 1954. Philosophically, it echoes structuralism: nothing exists in isolation. An entity is defined entirely by the network of arrows connecting it to the universe.",
-        exercises: "1. If two objects $A$ and $B$ have isomorphic representable functors $h_A \\cong h_B$, prove that $A$ and $B$ are isomorphic objects in the category. (Hint: The Yoneda Embedding is fully faithful).\n2. Explain the physical/philosophical meaning of the equation $\\text{Nat}(h_A, X) \\cong X(A)$."
-      },
-      ja: {
-        narrative: "ツアーの終着点として、圏論で最も深遠な定理「米田の補題」を提示します。存在とは孤立した実体ではなく、関係性の総和である。米田の補題はこの存在論を極限まで押し進めます。圏の中の対象は、それ自身の内部構造を直接覗かなくても、他のすべての対象との関係性（射の集まり）を観察するだけで完全に、かつ一意に決定されます。関係性こそが存在そのものなのです。",
-        rigor: "局所的に小さな圏 $\\mathcal{C}$ とその対象 $A$ に対し、表現可能関手 $h_A = \\text{Hom}(A, -): \\mathcal{C} \\to Set$ を定義します。米田の補題は、任意の共変関手 $X: \\mathcal{C} \\to Set$ に対して、以下の自然な全単射が存在することを示します：\n  $$\\text{Nat}(h_A, X) \\cong X(A)$$\n  この同型は、自然変換 $\\alpha: h_A \\Rightarrow X$ を要素 $\\alpha_A(1_A) \\in X(A)$ へとマッピングします。",
-        history: "1954年に米田信夫がパリの駅でソーンダース・マックレーンに説明したことに由来します。哲学的には、構造主義の主張と共鳴します。孤立して存在するものはなく、あらゆる実体は宇宙と自身を結ぶ「矢印のネットワーク」によって定義されるのです。",
-        exercises: "1. 2つの対象 $A, B$ の表現可能関手が同型 $h_A \\cong h_B$ であるならば、対象 $A$ と $B$ は圏内で同型であることを証明しなさい。（ヒント：米田埋め込みが充満忠実であること）\n2. 数式 $\\text{Nat}(h_A, X) \\cong X(A)$ の物理的・哲学的な意味を説明しなさい。"
-      }
-    }[language];
-  }, [language]);
+    return language === 'en' ? activeRoomData.en : activeRoomData.ja;
+  }, [activeRoomData, language]);
 
   const [activeSpeechText, setActiveSpeechText] = useState<string | null>(null);
   const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
@@ -597,11 +589,17 @@ export default function Hall10Visualizer({ language, forcedRoom }: { language: '
 
             <div className="animate-pop-in">
               <h3 className="placard-title">
-                {language === 'en' ? 'The Yoneda Ontology' : '米田存在論'}
+                {language === 'en' ? activeRoomData.nameEn : activeRoomData.nameJa}
               </h3>
               <p className="placard-subtitle">
-                {language === 'en' ? 'Defining existence through relational Hom-sets' : '関係性（Hom集合）による存在の定義'}
+                {language === 'en' ? activeRoomData.thesisEn : activeRoomData.thesisJa}
               </p>
+
+              {activeRoomData.image && (
+                <div className="placard-image-container" style={{ marginBottom: '1.25rem', width: '100%', borderRadius: '0.5rem', overflow: 'hidden', border: '1px solid rgba(255,255,255,0.08)' }}>
+                  <img src={activeRoomData.image} alt={activeRoomData.imageAlt || ''} style={{ width: '100%', height: 'auto', display: 'block' }} />
+                </div>
+              )}
 
               {/* Tab Selector */}
               <div className="placard-tabs" style={{ display: 'flex', gap: '0.35rem', marginBottom: '1.25rem', borderBottom: '1px solid rgba(255,255,255,0.08)', paddingBottom: '0.5rem' }}>

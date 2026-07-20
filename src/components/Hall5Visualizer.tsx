@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { 
   Play, Pause, RotateCcw, ChevronRight, AlertCircle, Info, Sparkles, BookOpen, Sliders, Square, FastForward, Rewind
 } from 'lucide-react';
+import { roomsData } from '../data/curriculumData';
 
 // ============================================================================
 // Types & AST Definitions
@@ -480,24 +481,22 @@ const translations = {
 // ============================================================================
 
 export default function Hall5Visualizer({ language, onlyVisualizer = false }: { language: 'en' | 'ja', onlyVisualizer?: boolean }) {
-  const t = translations[language];
+  const activeRoomData = useMemo(() => {
+    return roomsData[14] || roomsData[1];
+  }, []);
+
+  const t = useMemo(() => {
+    const base = translations[language];
+    return {
+      ...base,
+      title: language === 'en' ? activeRoomData.nameEn : activeRoomData.nameJa,
+      subtitle: language === 'en' ? activeRoomData.thesisEn : activeRoomData.thesisJa
+    };
+  }, [language, activeRoomData]);
 
   const tabContent = useMemo(() => {
-    return {
-      en: {
-        narrative: "In computer science, writing code is the free generation of syntax trees (ASTs). The compiler parses raw text characters into structured, nested operators and literals without executing them. Executing the code means collapsing this tree. The CPU recursively applies binary operations—folding $3 + 5$ to $8$—until the entire tree collapses into a single semantic value. Computation is the strict algebraic collapse of syntax.",
-        rigor: "Let $T$ be the algebraic theory of arithmetic. The free algebra $F(X)$ represents all arithmetic syntax trees. The evaluation is a homomorphism $eval: F(X) \\to \\mathbb{Z}$ that quotients the terms by the computational rewrite relations (e.g., $x + y \\sim z$). The final value is the equivalence class of the tree under computation.",
-        history: "This is the foundation of Alonzo Church's $\\lambda$-calculus, where terms are freely generated and then quotiented by $\\beta$-reduction equivalence. It proves that software execution is literally the mathematical quotienting of syntax.",
-        exercises: "1. Walk through the AST evaluation steps of $(2 * 3) + (10 / 2)$ and identify the relations applied at each collapse.\n2. Prove that evaluation is a homomorphic mapping from the tree algebra to the integer algebra."
-      },
-      ja: {
-        narrative: "コンピュータサイエンスにおいて、プログラムを書くことは「抽象構文木（AST）」を自由生成することです。コンパイラは生のテキストを、実行することなく、入れ子状の演算子とリテラルへと構造化します。コードを実行することは、この構文木を折りたたむ（Collapse）ことに他なりません。CPUは二項演算を再帰的に適用し、$3 + 5$ を $8$ へと折りたたみ、最終的に木全体を１つの値へと商化させます。計算とは、構文の代数的な崩壊そのものなのです。",
-        rigor: "算術の代数理論を $T$ とします。自由代数 $F(X)$ はすべての算術構文木を表します。評価（Evaluation）は、計算の書き換え規則（例：$x + y \\sim z$）によって項を商化する準同型写像 $eval: F(X) \\to \\mathbb{Z}$ です。最終的な出力値は、計算関係の下での構文木の同値類です。",
-        history: "これはアロンゾ・チャーチの $\\lambda$ 算術の基礎であり、項は自由生成された後、$\\beta$ 簡約の同値関係によって商化されます。ソフトウェアの実行とは、文字通り構文を数学的に商化することであると証明されています。",
-        exercises: "1. 式 $(2 * 3) + (10 / 2)$ のAST評価ステップをたどり、各崩壊ステップで適用される「関係式」を特定しなさい。\n2. 評価写像が構文木の代数から整数の代数への準同型写像であることを証明しなさい。"
-      }
-    }[language];
-  }, [language]);
+    return language === 'en' ? activeRoomData.en : activeRoomData.ja;
+  }, [activeRoomData, language]);
 
   // TTS States
   const [activeSpeechText, setActiveSpeechText] = useState<string | null>(null);
@@ -992,6 +991,12 @@ export default function Hall5Visualizer({ language, onlyVisualizer = false }: { 
                 </div>
                 <h1 className="placard-title">{t.title}</h1>
                 <p className="placard-subtitle">{t.subtitle}</p>
+
+                {activeRoomData.image && (
+                  <div className="placard-image-container" style={{ marginBottom: '1.25rem', width: '100%', borderRadius: '0.5rem', overflow: 'hidden', border: '1px solid rgba(255,255,255,0.08)' }}>
+                    <img src={activeRoomData.image} alt={activeRoomData.imageAlt || ''} style={{ width: '100%', height: 'auto', display: 'block' }} />
+                  </div>
+                )}
 
                 {/* Tab Selector */}
                 <div className="placard-tabs" style={{ display: 'flex', gap: '0.35rem', marginBottom: '1.25rem', borderBottom: '1px solid rgba(255,255,255,0.08)', paddingBottom: '0.5rem' }}>

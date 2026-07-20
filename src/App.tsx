@@ -3,6 +3,34 @@ import AdjunctionVisualizer from './components/AdjunctionVisualizer';
 import Hall3Visualizer from './components/Hall3Visualizer';
 import Hall5Visualizer from './components/Hall5Visualizer';
 import Hall10Visualizer from './components/Hall10Visualizer';
+import { roomsData } from './data/curriculumData';
+
+const wings = [
+  {
+    id: 'A',
+    nameEn: 'Wing A: Anthropology & Syntax',
+    nameJa: 'A翼：人類学と構文',
+    rooms: [1, 2, 3, 4, 5, 6]
+  },
+  {
+    id: 'B',
+    nameEn: 'Wing B: Topology & Gluing',
+    nameJa: 'B翼：トポロジーと接着',
+    rooms: [7, 8, 9, 10, 11, 12]
+  },
+  {
+    id: 'C',
+    nameEn: 'Wing C: Computation & Collapse',
+    nameJa: 'C翼：計算機と代数的評価',
+    rooms: [13, 14, 15, 16, 17, 18]
+  },
+  {
+    id: 'D',
+    nameEn: 'Wing D: Category Formalization',
+    nameJa: 'D翼：圏論的定式化',
+    rooms: [19, 20, 21, 22, 23, 24, 25]
+  }
+];
 
 export default function App() {
   const getInitialLanguage = (): 'en' | 'ja' => {
@@ -14,16 +42,19 @@ export default function App() {
     return 'en';
   };
 
-  const getInitialExhibit = (): string => {
+  const getInitialRoom = (): number => {
     if (typeof window !== 'undefined') {
       const params = new URLSearchParams(window.location.search);
-      return params.get('exhibit') || '1'; // Default to Hall 1 Entrance
+      const roomVal = parseInt(params.get('exhibit') || '1', 10);
+      return (roomVal >= 1 && roomVal <= 25) ? roomVal : 1;
     }
-    return '1';
+    return 1;
   };
 
   const [language, setLanguageState] = useState<'en' | 'ja'>(getInitialLanguage);
-  const [exhibit, setExhibitState] = useState<string>(getInitialExhibit);
+  const [activeRoom, setActiveRoomState] = useState<number>(getInitialRoom);
+
+  const activeWing = wings.find(w => w.rooms.includes(activeRoom)) || wings[0];
 
   const setLanguage = (newLang: 'en' | 'ja') => {
     setLanguageState(newLang);
@@ -35,123 +66,90 @@ export default function App() {
     }
   };
 
-  const setExhibit = (newEx: string) => {
-    setExhibitState(newEx);
+  const setActiveRoom = (roomNum: number) => {
+    setActiveRoomState(roomNum);
     if (typeof window !== 'undefined') {
       const params = new URLSearchParams(window.location.search);
-      params.set('exhibit', newEx);
+      params.set('exhibit', roomNum.toString());
       const newUrl = `${window.location.pathname}?${params.toString()}${window.location.hash}`;
       window.history.replaceState({}, '', newUrl);
-    }
-  };
-
-  const getExhibitTitle = () => {
-    if (language === 'en') {
-      switch (exhibit) {
-        case '1':
-          return 'EXHIBIT #01: THE ONTOLOGICAL CYCLE (MUSEUM ENTRANCE)';
-        case '2':
-          return 'EXHIBIT #02: DISCRETE TALLIES (PEBBLES & BONE NOTCHES)';
-        case '3':
-          return 'EXHIBIT #03: QUOTIENT TOPOLOGY (TORUS FOLDING)';
-        case '4':
-          return 'EXHIBIT #04: LANGUAGE & GRAMMAR (SEMANTIC SYNONYMY)';
-        case '5':
-          return 'EXHIBIT #05: COMPUTATION ALGORITHMS (AST EVALUATION)';
-        case '6':
-          return 'EXHIBIT #06: CATEGORY OF SETS (THE RAW MATERIALS)';
-        case '7':
-          return 'EXHIBIT #07: ADJUNCTION DUALITY (FREE FUNCTOR F ⊣ U)';
-        case '8':
-          return 'EXHIBIT #08: EXISTENCE AS RELATION (YONEDA PRELUDE)';
-        case '9':
-          return 'EXHIBIT #09: REPRESENTABLE FUNCTOR HOM(A, -)';
-        case '10':
-        default:
-          return 'EXHIBIT #10: THE YONEDA LEMMA (NATURAL ISOMORPHISM)';
-      }
-    } else {
-      switch (exhibit) {
-        case '1':
-          return '展示 #01：存在論的サイクル（美術館入口）';
-        case '2':
-          return '展示 #02：離散的数え上げ（小石と骨の刻み目）';
-        case '3':
-          return '展示 #03：商位相（トーラス境界接着）';
-        case '4':
-          return '展示 #04：言語と文法（同義語の商化）';
-        case '5':
-          return '展示 #05：代数的評価（AST簡約）';
-        case '6':
-          return '展示 #06：集合の圏（構造のない生の素材）';
-        case '7':
-          return '展示 #07：随伴の双対性（自由関手 F ⊣ U）';
-        case '8':
-          return '展示 #08：関係性としての存在（米田の補題導入）';
-        case '9':
-          return '展示 #09：表現可能関手 Hom(A, -)';
-        case '10':
-        default:
-          return '展示 #10：米田の補題（自然同型と可換性）';
-      }
     }
   };
 
   return (
     <div className="museum-app">
       {/* Immersive Museum Status Bar */}
-      <header className="museum-header">
-        <div className="museum-header-logo">
-          <span>MathBasics</span>
-          <span className="museum-header-exhibit">
-            {getExhibitTitle()}
-          </span>
+      <header className="museum-header" style={{ flexDirection: 'column', height: 'auto', padding: '0.75rem 1.5rem', gap: '0.75rem' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', alignItems: 'center' }}>
+          <div className="museum-header-logo" style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+            <span>MathBasics</span>
+            <span className="museum-header-exhibit" style={{ fontSize: '0.7rem', color: 'var(--primary)', borderLeft: '1px solid rgba(255,255,255,0.15)', paddingLeft: '1rem' }}>
+              {language === 'en' ? activeWing.nameEn : activeWing.nameJa}
+            </span>
+          </div>
+
+          {/* Bilingual Language Switch Pill */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <button 
+              onClick={() => setLanguage('en')} 
+              className={`btn-lang ${language === 'en' ? 'active' : ''}`}
+            >
+              EN
+            </button>
+            <span style={{ color: 'rgba(255,255,255,0.15)', fontSize: '0.75rem' }}>|</span>
+            <button 
+              onClick={() => setLanguage('ja')} 
+              className={`btn-lang ${language === 'ja' ? 'active' : ''}`}
+            >
+              JP
+            </button>
+          </div>
         </div>
 
-        {/* Exhibit Selector Navigation */}
-        <div className="exhibit-selector-scroll" style={{ display: 'flex', gap: '0.3rem', alignItems: 'center', overflowX: 'auto', maxWidth: '65%' }}>
-          {['1', '2', '3', '4', '5', '6', '7', '8', '9', '10'].map((num) => (
+        {/* Wing Selector Navigation */}
+        <div className="wing-selector-container" style={{ display: 'flex', gap: '0.5rem', width: '100%', overflowX: 'auto', borderBottom: '1px solid rgba(255,255,255,0.06)', paddingBottom: '0.5rem' }}>
+          {wings.map((w) => (
             <button
-              key={num}
-              onClick={() => setExhibit(num)}
-              className={`btn-lang ${exhibit === num ? 'active' : ''}`}
-              style={{ fontSize: '0.625rem', padding: '3px 7px', minWidth: '46px', textAlign: 'center' }}
+              key={w.id}
+              onClick={() => setActiveRoom(w.rooms[0])}
+              className={`btn-lang ${activeWing.id === w.id ? 'active' : ''}`}
+              style={{ fontSize: '0.65rem', padding: '4px 12px', minWidth: '120px', whiteSpace: 'nowrap', borderRadius: '4px' }}
             >
-              {num.padStart(2, '0')}
+              {language === 'en' ? w.nameEn : w.nameJa}
             </button>
           ))}
         </div>
 
-        {/* Bilingual Language Switch Pill */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-          <button 
-            onClick={() => setLanguage('en')} 
-            className={`btn-lang ${language === 'en' ? 'active' : ''}`}
-          >
-            EN
-          </button>
-          <span style={{ color: 'rgba(255,255,255,0.15)', fontSize: '0.75rem' }}>|</span>
-          <button 
-            onClick={() => setLanguage('ja')} 
-            className={`btn-lang ${language === 'ja' ? 'active' : ''}`}
-          >
-            JP
-          </button>
+        {/* Room Selector Navigation */}
+        <div className="room-selector-container" style={{ display: 'flex', gap: '0.3rem', width: '100%', overflowX: 'auto', paddingBottom: '0.25rem' }}>
+          {activeWing.rooms.map((roomNum) => {
+            const rData = roomsData[roomNum];
+            const name = language === 'en' ? rData.nameEn : rData.nameJa;
+            return (
+              <button
+                key={roomNum}
+                onClick={() => setActiveRoom(roomNum)}
+                className={`btn-lang ${activeRoom === roomNum ? 'active' : ''}`}
+                style={{ fontSize: '0.6rem', padding: '3px 8px', whiteSpace: 'nowrap', borderRadius: '3px' }}
+              >
+                {name}
+              </button>
+            );
+          })}
         </div>
       </header>
 
       {/* Immersive Exhibit Room */}
       <main className="museum-main-viewport">
-        {exhibit === '1' && <AdjunctionVisualizer language={language} forcedRoom={1} />}
-        {exhibit === '2' && <AdjunctionVisualizer language={language} forcedRoom={2} />}
-        {exhibit === '3' && <Hall3Visualizer language={language} onlyVisualizer={false} />}
-        {exhibit === '4' && <AdjunctionVisualizer language={language} forcedRoom={3} />}
-        {exhibit === '5' && <Hall5Visualizer language={language} onlyVisualizer={false} />}
-        {exhibit === '6' && <AdjunctionVisualizer language={language} forcedRoom={5} />}
-        {exhibit === '7' && <AdjunctionVisualizer language={language} forcedRoom={6} />}
-        {exhibit === '8' && <Hall10Visualizer language={language} forcedRoom={1} />}
-        {exhibit === '9' && <Hall10Visualizer language={language} forcedRoom={2} />}
-        {exhibit === '10' && <Hall10Visualizer language={language} forcedRoom={4} />}
+        {activeRoom === 9 ? (
+          <Hall3Visualizer language={language} onlyVisualizer={false} />
+        ) : activeRoom === 14 ? (
+          <Hall5Visualizer language={language} onlyVisualizer={false} />
+        ) : activeRoom === 25 ? (
+          <Hall10Visualizer language={language} forcedRoom={4} />
+        ) : (
+          <AdjunctionVisualizer language={language} forcedRoom={activeRoom} />
+        )}
       </main>
     </div>
   );

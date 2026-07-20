@@ -148,7 +148,7 @@ export default function AdjunctionVisualizer() {
       subtitle: "The absolute nature of mathematical existence.",
       audioText: "Welcome to the Ontology Museum Tour. At its ultimate foundation, mathematics is the structural cycle of Free Generation and Collapse or Quotienting. Every mathematical system is constructed by first freely generating a syntax or space of elements, and then collapsing it by imposing relations and equations. Category Theory is just a part of this, acting as the formal language that represents this ontological cycle. Today, we explore this reality through the classic example of Sets and Monoids.",
       explanation: (
-        <div className="flex flex-col gap-5 placard-text">
+        <div className="placard-text">
           <p>
             Welcome to the <strong>Ontology Gallery</strong>. 
           </p>
@@ -157,9 +157,6 @@ export default function AdjunctionVisualizer() {
           </p>
           <p>
             Every mathematical object is constructed by first freely generating a syntax or space of elements, and then collapsing it by imposing relations, equations, and quotients. Category Theory is just one formal language that models this ontological duality (through adjoint functors F ⊣ U and the unit and counit).
-          </p>
-          <p className="text-xs border-l-2 border-primary/45 pl-3 italic text-text-muted mt-3">
-            Use the controller above to play the Audio Guide and navigate through the gallery rooms.
           </p>
         </div>
       )
@@ -170,7 +167,7 @@ export default function AdjunctionVisualizer() {
       subtitle: "Plain elements without any operations.",
       audioText: "Stop 2, Category C representing Sets. Here we observe raw entities with no algebraic operations or structural relationships. This set X contains only plain generators. You can click Add Point to populate the set, or Reset to clear it.",
       explanation: (
-        <div className="flex flex-col gap-5 placard-text">
+        <div className="placard-text">
           <p>
             Here we observe Category <strong>C (Sets)</strong>. Elements in this category have no operations, no structures, and no connections. They are raw, discrete points.
           </p>
@@ -189,7 +186,7 @@ export default function AdjunctionVisualizer() {
       subtitle: "Free Monoids and string concatenation.",
       audioText: "Stop 3, Category D representing Monoids. Unlike sets, monoids contain a binary operation and an identity element. We can freely generate a monoid F(X) from our set X. Click Generate Structure to apply the Free Functor F. This creates all possible finite words over our set elements, where the monoid operation is string concatenation.",
       explanation: (
-        <div className="flex flex-col gap-5 placard-text">
+        <div className="placard-text">
           <p>
             We cross over into Category <strong>D (Monoids)</strong>. Monoids contain a binary operation (multiplication) and an identity element (ε).
           </p>
@@ -208,7 +205,7 @@ export default function AdjunctionVisualizer() {
       subtitle: "Category Theory as a formal language for ontology.",
       audioText: "Stop 4, The Adjunction Duality. The Left Adjoint F and Right Adjoint U form an adjunction, denoted F adjoint to U. This asserts a natural isomorphism between the set of monoid homomorphisms out of a free monoid, and the set of plain mappings out of its underlying set of generators. Defining a homomorphism is exactly equivalent to choosing where the raw generators go.",
       explanation: (
-        <div className="flex flex-col gap-5 placard-text">
+        <div className="placard-text">
           <p>
             The formalization of our ontology: <strong>F is Left Adjoint to U (F ⊣ U)</strong>.
           </p>
@@ -231,7 +228,7 @@ export default function AdjunctionVisualizer() {
       subtitle: "Embedding elements as singletons.",
       audioText: "Stop 5, The Adjunction Unit, denoted eta. For any set X, the unit is a natural mapping from X to the underlying set of the free monoid. It embeds each raw element x as a singleton word, containing just that element. Click the unit map button to see the injection in action.",
       explanation: (
-        <div className="flex flex-col gap-5 placard-text">
+        <div className="placard-text">
           <p>
             The Adjunction Unit <strong>η_X : X → U(F(X))</strong> is a natural transformation representing insertion/inclusion.
           </p>
@@ -250,7 +247,7 @@ export default function AdjunctionVisualizer() {
       subtitle: "Collapsing syntax under equivalence relations.",
       audioText: "Stop 6, The Adjunction Counit, denoted epsilon. It represents the quotienting action where freely generated syntax collapses into evaluated values. For any Monoid M, the Counit is a monoid homomorphism that collapses a freely generated word of monoid elements into their actual product in M. Enter a hyphenated word in the evaluator and click collapse to see the product evaluate.",
       explanation: (
-        <div className="flex flex-col gap-5 placard-text">
+        <div className="placard-text">
           <p>
             The Adjunction Counit <strong>ε_M : F(U(M)) → M</strong> is a natural transformation representing evaluation or collapse.
           </p>
@@ -282,24 +279,24 @@ export default function AdjunctionVisualizer() {
   const isSpeaking = activeSpeechText === currentTourStop.audioText;
 
   return (
-    <div className="h-full w-full max-w-none flex flex-col justify-between p-8 gap-6 overflow-hidden select-none">
+    <div className="visualizer-container animate-pop-in">
       
       {/* Museum Guide Nav Controller (Audio Guide Device Mock-up) */}
-      <div className="audio-guide-player p-4 flex flex-col md:flex-row items-center justify-between gap-6 flex-shrink-0">
+      <div className="audio-guide-player">
         
         {/* Device Brand & Screen */}
-        <div className="flex items-center gap-4">
-          <div className="w-10 h-10 rounded-xl bg-primary/10 border border-primary/30 flex items-center justify-center text-primary font-bold font-mono text-base shadow-inner">
+        <div className="device-info">
+          <div className="device-screen">
             {currentStop}
           </div>
-          <div>
-            <h4 className="font-bold text-[10px] tracking-widest text-primary font-sans uppercase">ONTOLOGY AUDIO GUIDE</h4>
-            <p className="text-[9px] text-text-muted font-mono uppercase mt-0.5">Station {currentStop} of {tourStops.length}</p>
+          <div className="device-meta">
+            <h4>Ontology Audio Guide</h4>
+            <p>Station {currentStop} of {tourStops.length}</p>
           </div>
         </div>
 
         {/* Audio controls with Animated Waveform */}
-        <div className="flex items-center gap-5 bg-slate-950/60 py-1.5 px-5 rounded-full border border-white/5">
+        <div className="audio-controls-group">
           <div className="audio-wave">
             <div className={`wave-bar ${isSpeaking ? 'active' : ''}`} />
             <div className={`wave-bar ${isSpeaking ? 'active' : ''}`} />
@@ -310,41 +307,31 @@ export default function AdjunctionVisualizer() {
 
           <button
             onClick={() => speakCurrentStop(currentTourStop.audioText)}
-            className={`btn flex items-center gap-2 px-5 py-2 text-[10px] font-bold rounded-full transition-all duration-500 tracking-wider ${
-              isSpeaking
-                ? 'bg-red-500 hover:bg-red-600 text-white shadow-lg shadow-red-500/20'
-                : 'btn-primary shadow-lg shadow-primary/20'
-            }`}
+            className={`btn ${isSpeaking ? 'btn-secondary' : 'btn-primary'}`}
+            style={isSpeaking ? { backgroundColor: 'var(--error)', color: 'white', borderColor: 'var(--error)' } : {}}
           >
-            {isSpeaking ? (
-              <>
-                <VolumeX size={12} /> Stop Audio
-              </>
-            ) : (
-              <>
-                <Volume2 size={12} /> Play Audio
-              </>
-            )}
+            {isSpeaking ? <VolumeX size={12} /> : <Volume2 size={12} />}
+            {isSpeaking ? 'Stop Audio' : 'Play Audio'}
           </button>
         </div>
 
         {/* Navigation Controls */}
-        <div className="flex items-center gap-3">
+        <div className="device-nav">
           <button
             onClick={prevStop}
             disabled={currentStop === 1}
-            className="btn btn-outline p-2 rounded-full border border-primary/20 text-primary hover:bg-primary/10 disabled:opacity-30"
+            className="btn btn-outline"
             title="Previous Room"
           >
             <ChevronLeft size={14} />
           </button>
-          <span className="text-[10px] font-bold font-mono w-20 text-center text-text-muted tracking-widest">
+          <span className="device-nav-text">
             ROOM {currentStop}
           </span>
           <button
             onClick={nextStop}
             disabled={currentStop === tourStops.length}
-            className="btn btn-outline p-2 rounded-full border border-primary/20 text-primary hover:bg-primary/10 disabled:opacity-30"
+            className="btn btn-outline"
             title="Next Room"
           >
             <ChevronRight size={14} />
@@ -353,73 +340,73 @@ export default function AdjunctionVisualizer() {
       </div>
 
       {/* Main Museum Exhibit Display */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 flex-grow min-h-0 overflow-hidden items-stretch">
+      <div className="exhibit-grid">
         
         {/* Left Column: Audio Guide Transcript & Explanations (The Placard Card) */}
-        <div className="lg:col-span-5 glass-panel p-6 flex flex-col justify-between min-h-0 bg-gradient-to-b from-slate-900/40 to-slate-950/60 overflow-y-auto">
+        <div className="placard-panel">
           <div>
-            <div className="flex items-center gap-2 text-primary/70 mb-4 border-b border-primary/10 pb-3">
+            <div className="placard-header">
               <BookOpen size={12} />
-              <span className="text-[9px] font-bold font-mono uppercase tracking-widest">Gallery Placard</span>
+              <span>Gallery Placard</span>
             </div>
-            <h3 className="text-lg font-bold text-text-main mb-2 placard-title">
+            <h3 className="placard-title">
               {currentTourStop.title}
             </h3>
-            <p className="text-[10px] text-primary/80 mb-5 font-semibold italic">
+            <p className="placard-subtitle">
               {currentTourStop.subtitle}
             </p>
             {currentTourStop.explanation}
           </div>
 
-          <div className="mt-6 pt-3 border-t border-primary/10 flex items-center justify-between text-[9px] text-text-muted font-mono tracking-widest">
+          <div className="placard-footer">
             <span>TNG COOP EXHIBITION</span>
             <span>STATION {currentStop}/6</span>
           </div>
         </div>
 
         {/* Right Column: Dynamic Interactive Exhibit Area (The Kiosk Screen) */}
-        <div className="lg:col-span-7 glass-panel p-6 flex flex-col justify-center min-h-0 exhibit-canvas bg-slate-950/50 overflow-hidden">
+        <div className="kiosk-panel">
           
           {/* STOP 1: Entrance */}
           {currentStop === 1 && (
-            <div className="text-center p-6 max-w-sm mx-auto animate-pop-in">
-              <div className="w-16 h-16 rounded-2xl bg-primary/5 border border-primary/20 flex items-center justify-center mx-auto text-primary mb-6 shadow-inner shadow-primary/10">
-                <Layers size={32} className="animate-pulse text-primary" />
+            <div className="entrance-display animate-pop-in">
+              <div className="entrance-icon-container">
+                <Layers size={32} />
               </div>
-              <h4 className="text-xs font-bold mb-3 text-primary font-mono tracking-wider font-semibold">FREE GENERATION & COLLAPSE</h4>
-              <p className="text-[11px] text-text-muted leading-relaxed font-sans max-w-xs mx-auto">
+              <h4>Free Generation & Collapse</h4>
+              <p>
                 Step inside the interactive exhibits. Click below to enter the Sets gallery room, representing raw mathematical generators.
               </p>
-              <button onClick={nextStop} className="btn btn-primary mt-6 text-[10px] font-bold py-2 px-5 rounded-full">
-                Enter Sets Gallery <ChevronRight size={12} className="ml-1" />
+              <button onClick={nextStop} className="btn btn-primary">
+                Enter Sets Gallery <ChevronRight size={12} />
               </button>
             </div>
           )}
 
           {/* STOP 2: Category C Sets */}
           {currentStop === 2 && (
-            <div className="animate-pop-in flex flex-col justify-between h-full gap-6">
+            <div className="animate-pop-in" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between', height: '100%', width: '100%' }}>
               <div>
-                <div className="flex justify-between items-center mb-4">
-                  <h4 className="font-bold text-[10px] text-primary uppercase font-mono tracking-widest">Set X Workspace</h4>
-                  <div className="flex gap-2">
-                    <button onClick={addElement} className="btn btn-primary py-1 px-3 text-[9px] font-bold rounded-full">
+                <div className="workspace-title-bar">
+                  <h4 className="workspace-title">Set X Workspace</h4>
+                  <div className="workspace-controls">
+                    <button onClick={addElement} className="btn btn-primary">
                       + Add Point
                     </button>
-                    <button onClick={clearElements} className="btn btn-outline py-1 px-3 text-[9px] border-red-500/20 text-red-400 hover:bg-red-500/10 rounded-full">
+                    <button onClick={clearElements} className="btn btn-secondary" style={{ borderColor: 'rgba(239, 68, 68, 0.3)', color: 'var(--error)' }}>
                       Reset Set
                     </button>
                   </div>
                 </div>
                 
-                <div className="bg-slate-950/60 border border-white/5 rounded-2xl p-6 min-h-[180px] flex items-center justify-center gap-6 flex-wrap mt-2 shadow-inner overflow-y-auto">
+                <div className="workspace-canvas">
                   {setElements.length === 0 ? (
-                    <span className="text-xs text-text-muted italic">Set is empty. Add a point!</span>
+                    <span className="empty-state">Set is empty. Add a point!</span>
                   ) : (
                     setElements.map(e => (
                       <div
                         key={e.id}
-                        className="w-12 h-12 rounded-full bg-slate-900 border border-primary/45 flex items-center justify-center text-base font-bold shadow-2xl text-primary font-mono floating-node"
+                        className="set-element floating-node"
                       >
                         {e.label}
                       </div>
@@ -428,10 +415,10 @@ export default function AdjunctionVisualizer() {
                 </div>
               </div>
               
-              <div className="pt-3 border-t border-white/5 flex justify-between items-center text-[10px] text-text-muted">
+              <div className="workspace-footer">
                 <span>Populate the set and proceed to the Monoid gallery room.</span>
-                <button onClick={nextStop} className="btn btn-secondary text-[9px] font-bold py-1.5 px-3 rounded-full">
-                  Go to Monoids <ChevronRight size={10} className="ml-1" />
+                <button onClick={nextStop} className="btn btn-secondary">
+                  Go to Monoids <ChevronRight size={10} />
                 </button>
               </div>
             </div>
@@ -439,40 +426,40 @@ export default function AdjunctionVisualizer() {
 
           {/* STOP 3: Category D Monoids */}
           {currentStop === 3 && (
-            <div className="animate-pop-in flex flex-col justify-between h-full gap-6">
+            <div className="animate-pop-in" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between', height: '100%', width: '100%' }}>
               <div>
-                <h4 className="font-bold text-[10px] text-secondary uppercase font-mono tracking-widest mb-4">Free Monoid F(X) Workspace</h4>
+                <h4 className="workspace-title" style={{ marginBottom: '1.5rem' }}>Free Monoid F(X) Workspace</h4>
                 
-                <div className="grid grid-cols-2 gap-3 mb-4">
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', marginBottom: '1.5rem' }}>
                   <button
                     onClick={triggerFreeGeneration}
                     disabled={setElements.length === 0}
-                    className="btn btn-primary py-2 text-[10px] font-bold"
+                    className="btn btn-primary"
                   >
-                    Apply Free Functor (F) <Sparkles size={12} className="ml-1" />
+                    Apply Free Functor (F) <Sparkles size={12} />
                   </button>
                   <button
                     onClick={triggerForgetfulCollapse}
                     disabled={monoidWords.length === 0}
-                    className="btn btn-secondary py-2 text-[10px] font-bold"
+                    className="btn btn-secondary"
                   >
-                    Apply Forgetful (U) <LogOut size={12} className="ml-1" />
+                    Apply Forgetful (U) <LogOut size={12} />
                   </button>
                 </div>
 
-                <div className="bg-slate-950/60 border border-white/5 rounded-2xl p-6 min-h-[140px] flex items-center justify-center gap-3 flex-wrap shadow-inner overflow-y-auto">
+                <div className="workspace-canvas">
                   {animationState === 'free' && monoidWords.length === 0 && (
-                    <div className="animate-spin text-primary">
+                    <div className="animate-spin" style={{ color: 'var(--primary)' }}>
                       <RefreshCw size={20} />
                     </div>
                   )}
                   {monoidWords.length === 0 && animationState !== 'free' && (
-                    <span className="text-xs text-text-muted italic text-center">Structure collapsed. Apply F to generate monoids.</span>
+                    <span className="empty-state">Structure collapsed. Apply F to generate monoids.</span>
                   )}
                   {monoidWords.length > 0 && (
-                    <div className="grid grid-cols-3 gap-2 w-full text-center">
+                    <div className="monoid-words-grid">
                       {monoidWords.map((word, idx) => (
-                        <div key={idx} className="p-2 rounded-xl bg-slate-900 border border-secondary/20 text-xs font-mono font-semibold text-secondary shadow-md floating-node">
+                        <div key={idx} className="monoid-item floating-node">
                           {word}
                         </div>
                       ))}
@@ -485,20 +472,14 @@ export default function AdjunctionVisualizer() {
 
           {/* STOP 4: Adjunction Bridge */}
           {currentStop === 4 && (
-            <div className="animate-pop-in text-center p-4">
-              <div className="inline-flex items-center gap-6 bg-slate-950/60 border border-white/5 p-6 rounded-3xl mb-6 shadow-2xl">
-                <div className="px-4 py-2 bg-slate-900 border border-primary/20 rounded-xl text-xs font-mono font-bold text-primary shadow-inner">
-                  hom(F(X), M)
-                </div>
-                <div className="text-primary font-bold text-xl animate-pulse">
-                  ≅
-                </div>
-                <div className="px-4 py-2 bg-slate-900 border border-secondary/20 rounded-xl text-xs font-mono font-bold text-secondary shadow-inner">
-                  hom(X, U(M))
-                </div>
+            <div className="animate-pop-in text-center">
+              <div className="bridge-box">
+                <div className="bridge-term primary">hom(F(X), M)</div>
+                <div className="bridge-iso-symbol">≅</div>
+                <div className="bridge-term secondary">hom(X, U(M))</div>
               </div>
-              <h4 className="text-[10px] font-bold mb-2 text-primary uppercase font-mono tracking-widest">Natural Isomorphism Duality</h4>
-              <p className="text-[11px] text-text-muted leading-relaxed max-w-xs mx-auto font-sans">
+              <h4 className="bridge-label">Natural Isomorphism Duality</h4>
+              <p className="bridge-text">
                 Universal property of free monoids. Mapping plain elements to any monoid automatically, uniquely induces a full structure-preserving Monoid Homomorphism out of the Free Monoid.
               </p>
             </div>
@@ -506,29 +487,30 @@ export default function AdjunctionVisualizer() {
 
           {/* STOP 5: Unit η */}
           {currentStop === 5 && (
-            <div className="animate-pop-in flex flex-col justify-between h-full gap-6">
+            <div className="animate-pop-in" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between', height: '100%', width: '100%' }}>
               <div>
-                <h4 className="font-bold text-[10px] text-primary uppercase font-mono tracking-widest mb-4">Ontological Unit (η_X) Simulation</h4>
-                <p className="text-[11px] text-text-muted mb-4 leading-relaxed font-sans">
+                <h4 className="workspace-title" style={{ marginBottom: '1.5rem' }}>Unit Mapping (η_X) Simulation</h4>
+                <p className="placard-text" style={{ fontSize: '0.8rem', marginBottom: '1rem' }}>
                   Click below to inject the Set generators into the free monoid as singleton words:
                 </p>
                 <button
                   onClick={triggerUnitMap}
                   disabled={setElements.length === 0}
-                  className="btn btn-primary w-full py-2 text-[10px] font-bold mb-4 rounded-full"
+                  className="btn btn-primary"
+                  style={{ width: '100%', marginBottom: '1.5rem' }}
                 >
                   Trigger η_X Mapping
                 </button>
 
-                <div className="flex flex-col gap-2 font-mono text-[11px] overflow-y-auto max-h-[160px] pr-2">
+                <div className="unit-list">
                   {setElements.map(e => (
-                    <div key={e.id} className="flex items-center gap-3 bg-slate-900/60 p-2.5 rounded-xl border border-white/5 shadow-md">
-                      <span className="text-primary font-bold">{e.label}</span>
+                    <div key={e.id} className="unit-row">
+                      <span className="unit-val-src">{e.label}</span>
                       <ArrowRight size={12} className="text-text-muted" />
-                      <span className="text-secondary font-bold transition-all duration-500 scale-105">
+                      <span className="unit-val-target">
                         {animationState === 'unit' ? `[${e.label}]` : '?'}
                       </span>
-                      <span className="text-text-muted text-[9px] ml-auto uppercase tracking-wider">
+                      <span className="unit-val-desc">
                         {animationState === 'unit' ? 'singleton word' : 'awaiting mapping'}
                       </span>
                     </div>
@@ -540,35 +522,35 @@ export default function AdjunctionVisualizer() {
 
           {/* STOP 6: Counit ε */}
           {currentStop === 6 && (
-            <div className="animate-pop-in flex flex-col justify-between h-full gap-6">
+            <div className="animate-pop-in" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between', height: '100%', width: '100%' }}>
               <div>
-                <h4 className="font-bold text-[10px] text-accent uppercase font-mono tracking-widest mb-4 font-semibold">Quotient Collapse (ε_M)</h4>
-                <p className="text-[11px] text-text-muted mb-3 leading-relaxed font-sans">
+                <h4 className="workspace-title" style={{ marginBottom: '1.5rem' }}>Quotient Collapse (ε_M)</h4>
+                <p className="placard-text" style={{ fontSize: '0.8rem', marginBottom: '1rem' }}>
                   Enter a string of monoid elements separated by hyphens and click to collapse/evaluate their binary product:
                 </p>
-                <form onSubmit={handleCounitCollapse} className="flex gap-2 mb-4">
+                <form onSubmit={handleCounitCollapse} className="counit-form">
                   <input
                     type="text"
                     value={counitInput}
                     onChange={e => setCounitInput(e.target.value)}
                     placeholder="x-y-z"
-                    className="input-text text-xs font-mono flex-grow"
+                    className="input-text"
                     required
                   />
-                  <button type="submit" className="btn btn-primary text-[10px] py-2 px-4 font-bold whitespace-nowrap rounded-xl">
+                  <button type="submit" className="btn btn-primary">
                     Collapse (ε_M)
                   </button>
                 </form>
 
                 {animationState === 'counit' && (
-                  <div className="animate-pop-in bg-slate-900 border border-primary/10 p-3.5 rounded-2xl text-xs flex items-center justify-center gap-2 min-h-[60px] shadow-inner">
+                  <div className="counit-result-box">
                     {counitResult ? (
-                      <span className="text-success font-bold flex items-center gap-1.5 animate-pulse text-[11px]">
-                        <CheckCircle2 size={14} /> Evaluation Product: <span className="font-mono text-secondary ml-1 text-xs">{counitResult}</span>
+                      <span className="counit-val-result flex items-center gap-1.5" style={{ color: 'var(--success)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                        <CheckCircle2 size={16} /> Evaluation Product: <span className="font-mono text-secondary ml-2 text-base">{counitResult}</span>
                       </span>
                     ) : (
-                      <span className="text-primary flex items-center gap-2 animate-pulse font-mono tracking-widest text-[9px]">
-                        <RefreshCw size={12} className="animate-spin" /> FOLDING SYNTAX TREES...
+                      <span className="counit-loading-text">
+                        FOLDING SYNTAX TREES...
                       </span>
                     )}
                   </div>

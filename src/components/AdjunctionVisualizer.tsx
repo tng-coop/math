@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { 
   ArrowRight, Layers, CheckCircle2, BookOpen,
-  Play, Pause, Square, SkipBack, SkipForward, FastForward, Rewind,
+  Play, Pause, Square, FastForward, Rewind,
   ChevronRight
 } from 'lucide-react';
 
@@ -476,11 +476,6 @@ export default function AdjunctionVisualizer({ language }: { language: 'en' | 'j
     }
   };
 
-  const prevStop = () => {
-    if (currentStop > 1) {
-      setCurrentStop(currentStop - 1);
-    }
-  };
 
   const currentTourStop = tourStops[currentStop - 1];
 
@@ -489,17 +484,40 @@ export default function AdjunctionVisualizer({ language }: { language: 'en' | 'j
   return (
     <div className="visualizer-container animate-pop-in">
       
+      {/* Prominent Segmented Room Navigation Dashboard */}
+      <nav className="room-nav-tabs">
+        {[1, 2, 3, 4, 5, 6].map((num) => {
+          const roman = ['I', 'II', 'III', 'IV', 'V', 'VI'][num - 1];
+          const isActive = currentStop === num;
+          return (
+            <button
+              key={num}
+              onClick={() => setCurrentStop(num)}
+              className={`room-tab-btn ${isActive ? 'active' : ''}`}
+            >
+              <span className="room-tab-num">{roman}</span>
+              <span className="room-tab-title">
+                {language === 'en' 
+                  ? ['Entrance', 'Counting', 'Language', 'Algorithms', 'Categories', 'Adjunction'][num - 1]
+                  : ['入口', '数え上げ', '言語', '計算機', '定式化', '随伴'][num - 1]
+                }
+              </span>
+            </button>
+          );
+        })}
+      </nav>
+
       {/* Museum Guide Nav Controller (Audio Guide Device Mock-up) */}
       <div className="audio-guide-player">
         
         {/* Device Brand & Screen */}
         <div className="device-info">
-          <div className="device-screen">
-            {currentStop}
+          <div className="device-screen" style={{ fontFamily: 'monospace', fontSize: '0.65rem' }}>
+            {isSpeaking ? 'ON' : 'OFF'}
           </div>
           <div className="device-meta">
-            <h4>{language === 'en' ? 'Ontology Audio Player' : '存在論オーディオプレーヤー'}</h4>
-            <p>{language === 'en' ? `Station ${currentStop} of ${tourStops.length}` : `ステーション ${currentStop} / ${tourStops.length}`}</p>
+            <h4>{language === 'en' ? 'Audio Companion Guide' : '解説ガイドレシーバー'}</h4>
+            <p>{language === 'en' ? 'Exhibition Sound Guide' : '展示音声アナウンス'}</p>
           </div>
         </div>
 
@@ -556,17 +574,7 @@ export default function AdjunctionVisualizer({ language }: { language: 'en' | 'j
 
           {/* Player controls */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
-            {/* Skip Prev Room */}
-            <button
-              onClick={prevStop}
-              disabled={currentStop === 1}
-              className="btn btn-outline"
-              style={{ width: '24px', height: '24px', padding: '0', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-              title={language === 'en' ? 'Previous Stop' : '前のスポット'}
-            >
-              <SkipBack size={10} />
-            </button>
-
+            
             {/* Rewind Word-by-Word */}
             <button
               onClick={() => handleSeek('rwd')}
@@ -597,17 +605,6 @@ export default function AdjunctionVisualizer({ language }: { language: 'en' | 'j
               title={language === 'en' ? 'Fast-Forward' : '早送り'}
             >
               <FastForward size={10} />
-            </button>
-
-            {/* Skip Next Room */}
-            <button
-              onClick={nextStop}
-              disabled={currentStop === tourStops.length}
-              className="btn btn-outline"
-              style={{ width: '24px', height: '24px', padding: '0', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-              title={language === 'en' ? 'Next Stop' : '次のスポット'}
-            >
-              <SkipForward size={10} />
             </button>
 
             {/* Stop Speech */}

@@ -223,11 +223,6 @@ export default function AdjunctionVisualizer({ language }: { language: 'en' | 'j
     startSpeech(activeSpeechText, targetWord.start);
   };
 
-  const cycleSpeed = () => {
-    const speeds = [1.0, 1.25, 1.5, 2.0];
-    const nextIdx = (speeds.indexOf(speedMultiplier) + 1) % speeds.length;
-    setSpeedMultiplier(speeds[nextIdx]);
-  };
 
   const addElement = () => {
     const labels = currentStop === 2 
@@ -510,22 +505,29 @@ export default function AdjunctionVisualizer({ language }: { language: 'en' | 'j
             </select>
           )}
 
-          {/* Speed Selector Pill */}
-          <button 
-            onClick={cycleSpeed}
-            className="btn btn-outline"
+          {/* Speed Selector Menu */}
+          <select
+            value={speedMultiplier.toString()}
+            onChange={(e) => setSpeedMultiplier(parseFloat(e.target.value))}
+            className="input-text"
             style={{ 
+              width: '64px', 
               fontSize: '0.65rem', 
-              padding: '2px 8px', 
+              padding: '2px 4px', 
               height: '24px', 
-              borderColor: 'rgba(212, 175, 55, 0.4)', 
+              background: 'rgba(0,0,0,0.5)',
+              border: '1px solid rgba(212,175,55,0.3)',
               color: 'var(--primary)',
-              minWidth: '45px'
+              cursor: 'pointer',
+              borderRadius: '6px'
             }}
             title={language === 'en' ? 'Playback Speed' : '再生速度'}
           >
-            {speedMultiplier.toFixed(2)}x
-          </button>
+            <option value="1" style={{ background: '#0b0f19', color: '#fff' }}>1.00x</option>
+            <option value="1.25" style={{ background: '#0b0f19', color: '#fff' }}>1.25x</option>
+            <option value="1.5" style={{ background: '#0b0f19', color: '#fff' }}>1.50x</option>
+            <option value="2" style={{ background: '#0b0f19', color: '#fff' }}>2.00x</option>
+          </select>
 
           {/* Player controls */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>

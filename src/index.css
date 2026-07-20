@@ -373,6 +373,31 @@ body {
   cursor: not-allowed;
 }
 
+/* Language Toggle Pill */
+.btn-lang {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  font-family: 'Inter', sans-serif;
+  font-size: 0.7rem;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 4px 10px;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+  border: 1px solid transparent;
+}
+
+.btn-lang:hover {
+  color: var(--text-main);
+}
+
+.btn-lang.active {
+  color: var(--primary);
+  background: rgba(212, 175, 55, 0.12);
+  border: 1px solid rgba(212, 175, 55, 0.25);
+}
+
 /* Dynamic Exhibits Workspaces */
 .workspace-title-bar {
   display: flex;

@@ -17,7 +17,7 @@ interface TourStop {
   explanation: React.ReactNode;
 }
 
-export default function AdjunctionVisualizer() {
+export default function AdjunctionVisualizer({ language }: { language: 'en' | 'ja' }) {
   const [currentStop, setCurrentStop] = useState<number>(1);
   const [setElements, setSetElements] = useState<ElementNode[]>([
     { id: '1', label: 'x' },
@@ -34,21 +34,26 @@ export default function AdjunctionVisualizer() {
   const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
   const [selectedVoiceName, setSelectedVoiceName] = useState<string>('');
 
-  // Load voices dynamically (handles async voice loading in Chrome/Edge)
+  // Load voices dynamically based on active language selection
   useEffect(() => {
     if (!('speechSynthesis' in window)) return;
 
     const loadVoices = () => {
       const allVoices = window.speechSynthesis.getVoices();
-      // Filter for English voices
-      const englishVoices = allVoices.filter(v => v.lang.startsWith('en'));
-      setVoices(englishVoices);
+      
+      // Filter based on active language
+      const langPrefix = language === 'ja' ? 'ja' : 'en';
+      const filteredVoices = allVoices.filter(v => v.lang.startsWith(langPrefix));
+      setVoices(filteredVoices);
 
-      // Auto-select the best available premium/natural voice
-      const premiumKeywords = ['google', 'natural', 'neural', 'online', 'aria', 'guy'];
-      const bestVoice = englishVoices.find(v => 
+      // Auto-select the best available voice
+      const premiumKeywords = language === 'ja'
+        ? ['google', 'natural', 'neural', 'online', 'sayaka', 'haruka']
+        : ['google', 'natural', 'neural', 'online', 'aria', 'guy'];
+
+      const bestVoice = filteredVoices.find(v => 
         premiumKeywords.some(keyword => v.name.toLowerCase().includes(keyword))
-      ) || englishVoices[0];
+      ) || filteredVoices[0];
 
       if (bestVoice) {
         setSelectedVoiceName(bestVoice.name);
@@ -57,15 +62,15 @@ export default function AdjunctionVisualizer() {
 
     loadVoices();
     window.speechSynthesis.onvoiceschanged = loadVoices;
-  }, []);
+  }, [language]);
 
-  // Stop speech when component unmounts or stop changes
+  // Stop speech when component unmounts or stop/language changes
   useEffect(() => {
     if ('speechSynthesis' in window) {
       window.speechSynthesis.cancel();
       setActiveSpeechText(null);
     }
-  }, [currentStop]);
+  }, [currentStop, language]);
 
   useEffect(() => {
     return () => {
@@ -82,7 +87,8 @@ export default function AdjunctionVisualizer() {
         setActiveSpeechText(null);
       } else {
         window.speechSynthesis.cancel(); // Stop current speech
-        const cleanText = text.replace(/[\$\{\}\[\]\(\)⊣→≅↦]/g, ' '); // Clean mathematical symbols for TTS
+        // Clean mathematical symbols for clear TTS reading
+        const cleanText = text.replace(/[\$\{\}\[\]\(\)⊣→≅↦]/g, ' '); 
         const utterance = new SpeechSynthesisUtterance(cleanText);
         
         // Apply selected voice
@@ -91,8 +97,8 @@ export default function AdjunctionVisualizer() {
           utterance.voice = voice;
         }
 
-        // Professional museum docent cadence
-        utterance.rate = 0.92; // Slightly slower for clarity and premium feel
+        // Adjust rate for premium museum feel
+        utterance.rate = language === 'ja' ? 0.95 : 0.92;
         utterance.pitch = 1.0;
 
         utterance.onend = () => setActiveSpeechText(null);
@@ -178,8 +184,127 @@ export default function AdjunctionVisualizer() {
     }, 1000);
   };
 
-  // Tour stops definitions
-  const tourStops: TourStop[] = [
+  // Tour stops definitions in EN and JP
+  const tourStops: TourStop[] = language === 'ja' ? [
+    {
+      id: 1,
+      title: "I. 美術館入口：存在論的サイクル",
+      subtitle: "数学的実体の絶対的なあり方について。",
+      audioText: "随伴存在論ツアーへようこそ。数学はその究極の基盤において、自由生成と、崩壊ないし商化の構造的サイクルそのものです。すべての数学的システムは、最初に記号や要素の空間を自由に生成し、次に同値関係や方程式を課すことでそれを崩壊させることによって構築されます。圏論は、この存在論的サイクルを随伴関手や単位・余単位として定式化した部分言語に過ぎません。本日は、集合とモノイドの古典的な例を通して、この現実を体験してください。",
+      explanation: (
+        <div className="placard-text">
+          <p>
+            <strong>存在論（オントロジー）ギャラリー</strong>へようこそ。 
+          </p>
+          <p>
+            数学とはその究極の基盤において、<strong>「自由生成 (Free Generation)」</strong>と<strong>「崩壊・商化 (Collapse / Quotienting)」</strong>の構造的サイクルそのものです。
+          </p>
+          <p>
+            あらゆる数学的対象は、最初に記号や要素の空間を「自由に生成」し、次に関係や方程式を課して「崩壊させる」ことによって構築されます。圏論（カテゴリー論）は、この普遍的な存在論のダイナミクスを、随伴関手（F ⊣ U）や単位・余単位という形で表現した一形態にすぎません。
+          </p>
+        </div>
+      )
+    },
+    {
+      id: 2,
+      title: "II. 圏 C：集合の領域",
+      subtitle: "演算を持たない離散的な要素の集まり。",
+      audioText: "第2ステーション、集合の圏Cです。ここでは代数演算や構造を持たない生身の実体のみを観察します。この集合Xには純粋な生成子のみが含まれています。Add Pointをクリックして点（要素）を追加するか、Resetをクリックしてクリアしてください。",
+      explanation: (
+        <div className="placard-text">
+          <p>
+            ここでは<strong>圏 C（集合の圏）</strong>を観察します。この圏のオブジェクトは演算も構造も持ちません。ただの離散的な点の集まりです。
+          </p>
+          <p>
+            この集合を <strong>X</strong> と呼びましょう。現在、X = {'{'} {setElements.map(e => e.label).join(', ')} {'}'} です。
+          </p>
+          <p>
+            操作パネルで要素を追加したりリセットしたりして、構造のない純粋な数学的素材を体験してください。
+          </p>
+        </div>
+      )
+    },
+    {
+      id: 3,
+      title: "III. 圏 D：構造の領域",
+      subtitle: "自由モノイドと文字列の結合演算。",
+      audioText: "第3ステーション、モノイドの圏Dです。集合とは異なり、モノイドは二項演算と単位元を含みます。集合Xから自由モノイドF(X)を自由に生成できます。Generate Structureをクリックして自由関手Fを適用し、文字を結合したすべての有限語の集合を生成してください。",
+      explanation: (
+        <div className="placard-text">
+          <p>
+            ここから<strong>圏 D（モノイドの圏）</strong>に入ります。モノイドは二項演算（積）と単位元（ε）を持ちます。
+          </p>
+          <p>
+            <strong>自由関手 F</strong> (左随伴) は、構造のない集合 <strong>X</strong> から、すべての有限列（単語）の集合である自由モノイド <strong>F(X)</strong> を生成します。
+          </p>
+          <p>
+            操作ボタンでこの代数的構造を生成したり、<strong>忘却関手 U</strong> (右随伴) を適用して演算を取り除き、再び集合へと崩壊させてみましょう。
+          </p>
+        </div>
+      )
+    },
+    {
+      id: 4,
+      title: "IV. 随伴の橋渡し (F ⊣ U)",
+      subtitle: "存在論の表現言語としての圏論。",
+      audioText: "第4ステーション、随伴の双対性です。左随伴Fと右随伴Uは、FがUの左随伴であることを示します。これは自由モノイドからのモノイド準同型写像の集合と、生成元の集合からの単なる写像の集合の間に自然な同型が存在することを主張します。準同型を定義することは、生成元をどこに送るかを選ぶことと完全に等価です。",
+      explanation: (
+        <div className="placard-text">
+          <p>
+            存在論の定式化としての<strong>左随伴と右随伴の対（F ⊣ U）</strong>。
+          </p>
+          <p>
+            これは以下の自然同型を確立します：
+            <br />
+            <span className="font-mono block text-center py-3 bg-slate-950/60 rounded border border-primary/20 my-3 text-primary text-base shadow-inner">
+              hom(F(X), M) ≅ hom(X, U(M))
+            </span>
+          </p>
+          <p>
+            これは、自由モノイド <strong>F(X)</strong> から他のモノイドへの構造を保つ「準同型写像」を定義することは、単に生成元 <strong>X</strong> がどこに写るかを決めることと完全に等価であることを意味します。
+          </p>
+        </div>
+      )
+    },
+    {
+      id: 5,
+      title: "V. 包摂の部屋：単位 (η)",
+      subtitle: "要素を単一単語として埋め込む。",
+      audioText: "第5ステーション、随伴の単位イータです。任意の集合Xに対して、単位は集合Xから自由モノイドの台集合への自然な写像です。各要素xをそれ自身のみからなる単語として埋め込みます。ボタンを押してその埋め込みを実行してください。",
+      explanation: (
+        <div className="placard-text">
+          <p>
+            随伴の<strong>単位 η_X : X → U(F(X))</strong> は、包摂（含み入れ）を表す自然変換です。
+          </p>
+          <p>
+            集合の各要素 <strong>x ∈ X</strong> を、自由モノイドの要素である一文字の単語 <strong>[x]</strong> へと標準的に対応させます。
+          </p>
+          <p>
+            単位マッピングを実行し、その対応関係を視覚的に確かめてください。
+          </p>
+        </div>
+      )
+    },
+    {
+      id: 6,
+      title: "VI. 商化・崩壊の部屋：余単位 (ε)",
+      subtitle: "同値関係の下で構文を積へと折りたたむ。",
+      audioText: "第6ステーション、余単位エプシロンです。これは、自由に生成された構文が評価されて値へと崩壊する商化アクションを表します。モノイドMに対して、余単位は自由に生成されたモノイド要素の列をモノイドの演算を使って実際の積へと畳み込む準同型写像です。",
+      explanation: (
+        <div className="placard-text">
+          <p>
+            随伴の<strong>余単位 ε_M : F(U(M)) → M</strong> は、評価または崩壊（商化）を表す自然変換です。
+          </p>
+          <p>
+            自由に生成されたモノイド要素の並び（構文）を、実際のモノイドの乗法を使って一つの要素へと畳み込みます。
+          </p>
+          <p>
+            ハイフンで区切られた列（例：<code>a-b-c</code>）を入力し、余単位による崩壊を実行して、演算が実行される様子を観察してください。
+          </p>
+        </div>
+      )
+    }
+  ] : [
     {
       id: 1,
       title: "I. Gallery Entrance: The Ontological Cycle",
@@ -328,8 +453,8 @@ export default function AdjunctionVisualizer() {
             {currentStop}
           </div>
           <div className="device-meta">
-            <h4>Ontology Audio Guide</h4>
-            <p>Station {currentStop} of {tourStops.length}</p>
+            <h4>{language === 'en' ? 'Ontology Audio Guide' : '存在論音声ガイド'}</h4>
+            <p>{language === 'en' ? `Station ${currentStop} of ${tourStops.length}` : `ステーション ${currentStop} / ${tourStops.length}`}</p>
           </div>
         </div>
 
@@ -341,9 +466,9 @@ export default function AdjunctionVisualizer() {
               onChange={(e) => setSelectedVoiceName(e.target.value)}
               className="input-text"
               style={{ 
-                width: '140px', 
+                width: '130px', 
                 fontSize: '0.65rem', 
-                padding: '4px 8px', 
+                padding: '2px 6px', 
                 height: '24px', 
                 background: 'rgba(0,0,0,0.5)',
                 border: '1px solid rgba(212,175,55,0.3)',
@@ -354,7 +479,7 @@ export default function AdjunctionVisualizer() {
             >
               {voices.map((v, i) => (
                 <option key={i} value={v.name} style={{ background: '#0b0f19', color: '#fff' }}>
-                  {v.name.replace('Microsoft', 'MS').replace('Google', 'G')}
+                  {v.name.replace('Microsoft', 'MS').replace('Google', 'G').replace('日本語', 'JP')}
                 </option>
               ))}
             </select>
@@ -374,7 +499,7 @@ export default function AdjunctionVisualizer() {
             style={isSpeaking ? { backgroundColor: 'var(--error)', color: 'white', borderColor: 'var(--error)', padding: '4px 12px', height: '24px' } : { padding: '4px 12px', height: '24px' }}
           >
             {isSpeaking ? <VolumeX size={10} /> : <Volume2 size={10} />}
-            {isSpeaking ? 'Stop' : 'Play'}
+            {isSpeaking ? (language === 'en' ? 'Stop' : '停止') : (language === 'en' ? 'Play' : '再生')}
           </button>
         </div>
 
@@ -389,7 +514,7 @@ export default function AdjunctionVisualizer() {
             <ChevronLeft size={14} />
           </button>
           <span className="device-nav-text">
-            ROOM {currentStop}
+            {language === 'en' ? `ROOM ${currentStop}` : `第 ${currentStop} 室`}
           </span>
           <button
             onClick={nextStop}
@@ -410,7 +535,7 @@ export default function AdjunctionVisualizer() {
           <div>
             <div className="placard-header">
               <BookOpen size={12} />
-              <span>Gallery Placard</span>
+              <span>{language === 'en' ? 'Gallery Placard' : '展示説明'}</span>
             </div>
             <h3 className="placard-title">
               {currentTourStop.title}
@@ -436,12 +561,15 @@ export default function AdjunctionVisualizer() {
               <div className="entrance-icon-container">
                 <Layers size={32} />
               </div>
-              <h4>Free Generation & Collapse</h4>
+              <h4>{language === 'en' ? 'Free Generation & Collapse' : '自由生成と崩壊'}</h4>
               <p>
-                Step inside the interactive exhibits. Click below to enter the Sets gallery room, representing raw mathematical generators.
+                {language === 'en'
+                  ? 'Step inside the interactive exhibits. Click below to enter the Sets gallery room, representing raw mathematical generators.'
+                  : '対話型の展示室に入ります。以下をクリックして、生の数学的生成元を表す「集合（Sets）展示室」に進んでください。'
+                }
               </p>
               <button onClick={nextStop} className="btn btn-primary">
-                Enter Sets Gallery <ChevronRight size={12} />
+                {language === 'en' ? 'Enter Sets Gallery' : '集合展示室へ進む'} <ChevronRight size={12} />
               </button>
             </div>
           )}
@@ -451,20 +579,22 @@ export default function AdjunctionVisualizer() {
             <div className="animate-pop-in" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between', height: '100%', width: '100%' }}>
               <div>
                 <div className="workspace-title-bar">
-                  <h4 className="workspace-title">Set X Workspace</h4>
+                  <h4 className="workspace-title">{language === 'en' ? 'Set X Workspace' : '集合 X ワークスペース'}</h4>
                   <div className="workspace-controls">
                     <button onClick={addElement} className="btn btn-primary">
-                      + Add Point
+                      {language === 'en' ? '+ Add Point' : '+ 要素を追加'}
                     </button>
                     <button onClick={clearElements} className="btn btn-secondary" style={{ borderColor: 'rgba(239, 68, 68, 0.3)', color: 'var(--error)' }}>
-                      Reset Set
+                      {language === 'en' ? 'Reset Set' : 'リセット'}
                     </button>
                   </div>
                 </div>
                 
                 <div className="workspace-canvas">
                   {setElements.length === 0 ? (
-                    <span className="empty-state">Set is empty. Add a point!</span>
+                    <span className="empty-state">
+                      {language === 'en' ? 'Set is empty. Add a point!' : '集合が空です。要素を追加してください！'}
+                    </span>
                   ) : (
                     setElements.map(e => (
                       <div
@@ -479,9 +609,9 @@ export default function AdjunctionVisualizer() {
               </div>
               
               <div className="workspace-footer">
-                <span>Populate the set and proceed to the Monoid gallery room.</span>
+                <span>{language === 'en' ? 'Populate the set and proceed to the Monoid gallery room.' : '集合要素を設定し、モノイド展示室へと進んでください。'}</span>
                 <button onClick={nextStop} className="btn btn-secondary">
-                  Go to Monoids <ChevronRight size={10} />
+                  {language === 'en' ? 'Go to Monoids' : 'モノイドへ'} <ChevronRight size={10} />
                 </button>
               </div>
             </div>
@@ -491,7 +621,9 @@ export default function AdjunctionVisualizer() {
           {currentStop === 3 && (
             <div className="animate-pop-in" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between', height: '100%', width: '100%' }}>
               <div>
-                <h4 className="workspace-title" style={{ marginBottom: '1.5rem' }}>Free Monoid F(X) Workspace</h4>
+                <h4 className="workspace-title" style={{ marginBottom: '1.5rem' }}>
+                  {language === 'en' ? 'Free Monoid F(X) Workspace' : '自由モノイド F(X) ワークスペース'}
+                </h4>
                 
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', marginBottom: '1.5rem' }}>
                   <button
@@ -499,14 +631,14 @@ export default function AdjunctionVisualizer() {
                     disabled={setElements.length === 0}
                     className="btn btn-primary"
                   >
-                    Apply Free Functor (F) <Sparkles size={12} />
+                    {language === 'en' ? 'Apply Free Functor (F)' : '自由関手 (F) を適用'} <Sparkles size={12} />
                   </button>
                   <button
                     onClick={triggerForgetfulCollapse}
                     disabled={monoidWords.length === 0}
                     className="btn btn-secondary"
                   >
-                    Apply Forgetful (U) <LogOut size={12} />
+                    {language === 'en' ? 'Apply Forgetful (U)' : '忘却関手 (U) を適用'} <LogOut size={12} />
                   </button>
                 </div>
 
@@ -517,7 +649,9 @@ export default function AdjunctionVisualizer() {
                     </div>
                   )}
                   {monoidWords.length === 0 && animationState !== 'free' && (
-                    <span className="empty-state">Structure collapsed. Apply F to generate monoids.</span>
+                    <span className="empty-state">
+                      {language === 'en' ? 'Structure collapsed. Apply F to generate monoids.' : '構造が崩壊しました。Fを適用してモノイドを生成してください。'}
+                    </span>
                   )}
                   {monoidWords.length > 0 && (
                     <div className="monoid-words-grid">
@@ -541,9 +675,12 @@ export default function AdjunctionVisualizer() {
                 <div className="bridge-iso-symbol">≅</div>
                 <div className="bridge-term secondary">hom(X, U(M))</div>
               </div>
-              <h4 className="bridge-label">Natural Isomorphism Duality</h4>
+              <h4 className="bridge-label">{language === 'en' ? 'Natural Isomorphism Duality' : '自然同型の双対性'}</h4>
               <p className="bridge-text">
-                Universal property of free monoids. Mapping plain elements to any monoid automatically, uniquely induces a full structure-preserving Monoid Homomorphism out of the Free Monoid.
+                {language === 'en'
+                  ? 'Universal property of free monoids. Mapping plain elements to any monoid automatically, uniquely induces a full structure-preserving Monoid Homomorphism out of the Free Monoid.'
+                  : '自由モノイドの普遍的性質。構造を持たない集合の要素から他のモノイドへの写像を定義すると、それは自動的かつ一意に自由モノイドからの構造保存準同型写像を誘起します。'
+                }
               </p>
             </div>
           )}
@@ -552,9 +689,14 @@ export default function AdjunctionVisualizer() {
           {currentStop === 5 && (
             <div className="animate-pop-in" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between', height: '100%', width: '100%' }}>
               <div>
-                <h4 className="workspace-title" style={{ marginBottom: '1.5rem' }}>Unit Mapping (η_X) Simulation</h4>
+                <h4 className="workspace-title" style={{ marginBottom: '1.5rem' }}>
+                  {language === 'en' ? 'Unit Mapping (η_X) Simulation' : '単位マッピング (η_X) シミュレーション'}
+                </h4>
                 <p className="placard-text" style={{ fontSize: '0.8rem', marginBottom: '1rem' }}>
-                  Click below to inject the Set generators into the free monoid as singleton words:
+                  {language === 'en'
+                    ? 'Click below to inject the Set generators into the free monoid as singleton words:'
+                    : '集合の生成元を、自由モノイド内の一文字の単語（単一単語）として包摂・埋め込みます：'
+                  }
                 </p>
                 <button
                   onClick={triggerUnitMap}
@@ -562,7 +704,7 @@ export default function AdjunctionVisualizer() {
                   className="btn btn-primary"
                   style={{ width: '100%', marginBottom: '1.5rem' }}
                 >
-                  Trigger η_X Mapping
+                  {language === 'en' ? 'Trigger η_X Mapping' : '単位射 (η_X) を実行'}
                 </button>
 
                 <div className="unit-list">
@@ -574,7 +716,10 @@ export default function AdjunctionVisualizer() {
                         {animationState === 'unit' ? `[${e.label}]` : '?'}
                       </span>
                       <span className="unit-val-desc">
-                        {animationState === 'unit' ? 'singleton word' : 'awaiting mapping'}
+                        {animationState === 'unit' 
+                          ? (language === 'en' ? 'singleton word' : '単一単語') 
+                          : (language === 'en' ? 'awaiting mapping' : 'マッピング待機中')
+                        }
                       </span>
                     </div>
                   ))}
@@ -587,9 +732,14 @@ export default function AdjunctionVisualizer() {
           {currentStop === 6 && (
             <div className="animate-pop-in" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between', height: '100%', width: '100%' }}>
               <div>
-                <h4 className="workspace-title" style={{ marginBottom: '1.5rem' }}>Quotient Collapse (ε_M)</h4>
+                <h4 className="workspace-title" style={{ marginBottom: '1.5rem' }}>
+                  {language === 'en' ? 'Quotient Collapse (ε_M)' : '商化・崩壊 (ε_M)'}
+                </h4>
                 <p className="placard-text" style={{ fontSize: '0.8rem', marginBottom: '1rem' }}>
-                  Enter a string of monoid elements separated by hyphens and click to collapse/evaluate their binary product:
+                  {language === 'en'
+                    ? 'Enter a string of monoid elements separated by hyphens and click to collapse/evaluate their binary product:'
+                    : 'ハイフンで区切られた自由モノイド要素の列を入力し、実際の演算（乗法）によって積へと畳み込みます：'
+                  }
                 </p>
                 <form onSubmit={handleCounitCollapse} className="counit-form">
                   <input
@@ -601,7 +751,7 @@ export default function AdjunctionVisualizer() {
                     required
                   />
                   <button type="submit" className="btn btn-primary">
-                    Collapse (ε_M)
+                    {language === 'en' ? 'Collapse (ε_M)' : '崩壊させる'}
                   </button>
                 </form>
 
@@ -609,11 +759,11 @@ export default function AdjunctionVisualizer() {
                   <div className="counit-result-box">
                     {counitResult ? (
                       <span className="counit-val-result flex items-center gap-1.5" style={{ color: 'var(--success)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                        <CheckCircle2 size={16} /> Evaluation Product: <span className="font-mono text-secondary ml-2 text-base">{counitResult}</span>
+                        <CheckCircle2 size={16} /> {language === 'en' ? 'Evaluation Product:' : '積の計算結果:'} <span className="font-mono text-secondary ml-2 text-base">{counitResult}</span>
                       </span>
                     ) : (
                       <span className="counit-loading-text">
-                        FOLDING SYNTAX TREES...
+                        {language === 'en' ? 'FOLDING SYNTAX TREES...' : '構文関係の畳み込み・商化中...'}
                       </span>
                     )}
                   </div>

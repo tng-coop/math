@@ -144,19 +144,19 @@ export default function AdjunctionVisualizer() {
   const tourStops: TourStop[] = [
     {
       id: 1,
-      title: "I. Gallery Entrance: The Ontology of Mathematics",
-      subtitle: "The absolute cycle of syntax and relations.",
-      audioText: "Welcome to the Adjunction Museum Tour. At its ultimate foundation, mathematics is the structural cycle of Free Generation and Collapse or Quotienting. Every mathematical system is constructed by first freely generating a syntax or space of elements, and then collapsing it by imposing relations and equations. Category Theory later formalized this absolute truth through Adjoint Functors and the duality of Unit and Counit. Today, we explore this universal reality through the classic adjunction between Sets and Monoids.",
+      title: "I. Gallery Entrance: The Ontological Cycle",
+      subtitle: "The absolute nature of mathematical existence.",
+      audioText: "Welcome to the Ontology Museum Tour. At its ultimate foundation, mathematics is the structural cycle of Free Generation and Collapse or Quotienting. Every mathematical system is constructed by first freely generating a syntax or space of elements, and then collapsing it by imposing relations and equations. Category Theory is just a part of this, acting as the formal language that represents this ontological cycle. Today, we explore this reality through the classic example of Sets and Monoids.",
       explanation: (
         <div className="flex flex-col gap-5 placard-text">
           <p>
-            Welcome to the <strong>Adjunction Museum Gallery</strong>. 
+            Welcome to the <strong>Ontology Gallery</strong>. 
           </p>
           <p>
             At its ultimate foundation, mathematics <strong>is</strong> the structural cycle of <strong>Free Generation</strong> and <strong>Collapse / Quotienting</strong>.
           </p>
           <p>
-            Every mathematical object is constructed by first freely generating a syntax or space of elements, and then collapsing it by imposing relations and equations. Category Theory later formalized this absolute truth through Adjoint Functors (F ⊣ U) and the duality of Unit and Counit.
+            Every mathematical object is constructed by first freely generating a syntax or space of elements, and then collapsing it by imposing relations, equations, and quotients. Category Theory is just one formal language that models this ontological duality (through adjoint functors F ⊣ U and the unit and counit).
           </p>
           <p className="text-xs border-l-2 border-primary/45 pl-3 italic text-text-muted mt-3">
             Use the controller above to play the Audio Guide and navigate through the gallery rooms.
@@ -204,13 +204,13 @@ export default function AdjunctionVisualizer() {
     },
     {
       id: 4,
-      title: "IV. The Adjunction Bridge (F ⊣ U)",
-      subtitle: "The natural isomorphism of mapping.",
+      title: "IV. The Formal Adjunction Bridge (F ⊣ U)",
+      subtitle: "Category Theory as a formal language for ontology.",
       audioText: "Stop 4, The Adjunction Duality. The Left Adjoint F and Right Adjoint U form an adjunction, denoted F adjoint to U. This asserts a natural isomorphism between the set of monoid homomorphisms out of a free monoid, and the set of plain mappings out of its underlying set of generators. Defining a homomorphism is exactly equivalent to choosing where the raw generators go.",
       explanation: (
         <div className="flex flex-col gap-5 placard-text">
           <p>
-            The core mathematical duality: <strong>F is Left Adjoint to U (F ⊣ U)</strong>.
+            The formalization of our ontology: <strong>F is Left Adjoint to U (F ⊣ U)</strong>.
           </p>
           <p>
             This establishes a natural isomorphism:
@@ -227,7 +227,7 @@ export default function AdjunctionVisualizer() {
     },
     {
       id: 5,
-      title: "V. Room of Inclusion: The Unit (η)",
+      title: "V. Room of Free Inclusion: The Unit (η)",
       subtitle: "Embedding elements as singletons.",
       audioText: "Stop 5, The Adjunction Unit, denoted eta. For any set X, the unit is a natural mapping from X to the underlying set of the free monoid. It embeds each raw element x as a singleton word, containing just that element. Click the unit map button to see the injection in action.",
       explanation: (
@@ -246,9 +246,9 @@ export default function AdjunctionVisualizer() {
     },
     {
       id: 6,
-      title: "VI. Room of Reduction: The Counit (ε)",
-      subtitle: "Collapsing syntax into actual evaluation.",
-      audioText: "Stop 6, The Adjunction Counit, denoted epsilon. For any Monoid M, the Counit is a monoid homomorphism that collapses a freely generated word of monoid elements into their actual product in M. Enter a hyphenated word in the evaluator and click collapse to see the product evaluate.",
+      title: "VI. Room of Quotient Collapse: The Counit (ε)",
+      subtitle: "Collapsing syntax under equivalence relations.",
+      audioText: "Stop 6, The Adjunction Counit, denoted epsilon. It represents the quotienting action where freely generated syntax collapses into evaluated values. For any Monoid M, the Counit is a monoid homomorphism that collapses a freely generated word of monoid elements into their actual product in M. Enter a hyphenated word in the evaluator and click collapse to see the product evaluate.",
       explanation: (
         <div className="flex flex-col gap-5 placard-text">
           <p>
@@ -293,7 +293,7 @@ export default function AdjunctionVisualizer() {
             {currentStop}
           </div>
           <div>
-            <h4 className="font-bold text-[10px] tracking-widest text-primary font-sans uppercase">ADJUNCTION AUDIO GUIDE</h4>
+            <h4 className="font-bold text-[10px] tracking-widest text-primary font-sans uppercase">ONTOLOGY AUDIO GUIDE</h4>
             <p className="text-[9px] text-text-muted font-mono uppercase mt-0.5">Station {currentStop} of {tourStops.length}</p>
           </div>
         </div>
@@ -386,9 +386,9 @@ export default function AdjunctionVisualizer() {
               <div className="w-16 h-16 rounded-2xl bg-primary/5 border border-primary/20 flex items-center justify-center mx-auto text-primary mb-6 shadow-inner shadow-primary/10">
                 <Layers size={32} className="animate-pulse text-primary" />
               </div>
-              <h4 className="text-xs font-bold mb-3 text-primary font-mono tracking-wider">SETS AND MONOIDS (F ⊣ U)</h4>
+              <h4 className="text-xs font-bold mb-3 text-primary font-mono tracking-wider font-semibold">FREE GENERATION & COLLAPSE</h4>
               <p className="text-[11px] text-text-muted leading-relaxed font-sans max-w-xs mx-auto">
-                Step inside the interactive exhibits. Click below to enter the Category C Sets workspace, where we generate raw elements before creating structure.
+                Step inside the interactive exhibits. Click below to enter the Sets gallery room, representing raw mathematical generators.
               </p>
               <button onClick={nextStop} className="btn btn-primary mt-6 text-[10px] font-bold py-2 px-5 rounded-full">
                 Enter Sets Gallery <ChevronRight size={12} className="ml-1" />
@@ -508,7 +508,7 @@ export default function AdjunctionVisualizer() {
           {currentStop === 5 && (
             <div className="animate-pop-in flex flex-col justify-between h-full gap-6">
               <div>
-                <h4 className="font-bold text-[10px] text-primary uppercase font-mono tracking-widest mb-4">Unit Mapping (η_X) Simulation</h4>
+                <h4 className="font-bold text-[10px] text-primary uppercase font-mono tracking-widest mb-4">Ontological Unit (η_X) Simulation</h4>
                 <p className="text-[11px] text-text-muted mb-4 leading-relaxed font-sans">
                   Click below to inject the Set generators into the free monoid as singleton words:
                 </p>
@@ -542,7 +542,7 @@ export default function AdjunctionVisualizer() {
           {currentStop === 6 && (
             <div className="animate-pop-in flex flex-col justify-between h-full gap-6">
               <div>
-                <h4 className="font-bold text-[10px] text-accent uppercase font-mono tracking-widest mb-4 font-semibold">Counit Evaluation (ε_M)</h4>
+                <h4 className="font-bold text-[10px] text-accent uppercase font-mono tracking-widest mb-4 font-semibold">Quotient Collapse (ε_M)</h4>
                 <p className="text-[11px] text-text-muted mb-3 leading-relaxed font-sans">
                   Enter a string of monoid elements separated by hyphens and click to collapse/evaluate their binary product:
                 </p>

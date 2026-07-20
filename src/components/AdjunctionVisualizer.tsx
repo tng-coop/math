@@ -1,22 +1,32 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { 
-  ArrowRight, Layers, CheckCircle2, BookOpen,
-  Play, Pause, Square, FastForward, Rewind,
-  ChevronRight
+  BookOpen, Play, Pause, Square, FastForward, Rewind
 } from 'lucide-react';
 import { roomsData } from '../data/curriculumData';
-
-interface ElementNode {
-  id: string;
-  label: string;
-}
-
-interface TourStop {
-  id: number;
-  title: string;
-  subtitle: string;
-  text: string;
-}
+import {
+  OntologicalCycleVisualizer,
+  LebomboBoneVisualizer,
+  SumerianBullaVisualizer,
+  IncaQuipuVisualizer,
+  LanguageSynonymyVisualizer,
+  LindenbaumTarskiVisualizer,
+  TextileWeavingVisualizer,
+  OrigamiCreaseVisualizer,
+  ProjectiveGeometryVisualizer,
+  PathHomotopyVisualizer,
+  EinsteinSpacetimeVisualizer,
+  LambdaCalculusVisualizer,
+  RelationalAlgebraVisualizer,
+  RegExAutomataVisualizer,
+  TypeTheoryVisualizer,
+  HoTTVisualizer,
+  CategorySetsVisualizer,
+  CategoryMonoidsVisualizer,
+  FunctorialBridgesVisualizer,
+  AdjunctionDualityVisualizer,
+  UnitCounitVisualizer,
+  MonadsVisualizer
+} from './CustomRoomVisualizers';
 
 interface SpokenWord {
   text: string;
@@ -51,45 +61,6 @@ export default function AdjunctionVisualizer({ language, forcedRoom, onNavigate 
       }
     }
   }, [currentStop, forcedRoom]);
-
-  const [setElements, setSetElements] = useState<ElementNode[]>([
-    { id: '1', label: 'I' },
-    { id: '2', label: 'I' },
-    { id: '3', label: 'I' }
-  ]);
-  const [monoidWords, setMonoidWords] = useState<string[]>([]);
-  const [animationState, setAnimationState] = useState<'idle' | 'free' | 'forget' | 'unit' | 'counit'>('idle');
-  const [counitInput, setCounitInput] = useState<string>('I-I-I');
-  const [counitResult, setCounitResult] = useState<string | null>(null);
-
-  // Map 25 rooms to the 6 core visual stops of the Adjunction sandbox
-  const visualStop = useMemo(() => {
-    const stopMap: Record<number, number> = {
-      1: 1, // Entrance
-      2: 2, // Notches / Counting
-      3: 2, // Clay Tokens (Counting sandbox)
-      4: 2, // Quipu (Counting knots sandbox)
-      5: 3, // Language / Synonyms
-      6: 4, // Logic / Deduction
-      7: 5, // Weaving (Monoids functor maps)
-      8: 5, // Origami crease patterns (Monoids mappings)
-      10: 5, // Projective geometry
-      11: 6, // Path Homotopy (Adjunction graph)
-      12: 6, // Spacetime gravity quotients
-      13: 4, // Lambda calculus (AST sandbox)
-      15: 4, // Database query compilation (AST)
-      16: 4, // Automata regular expressions (AST)
-      17: 4, // Type theory proofs (AST)
-      18: 4, // HoTT paths (AST)
-      19: 5, // Category of Sets
-      20: 5, // Category of Monoids
-      21: 5, // Functors / Bridges
-      22: 6, // Adjunction Duality
-      23: 6, // Unit & Counit
-      24: 6, // Monads
-    };
-    return stopMap[currentStop] || 1;
-  }, [currentStop]);
 
   const activeRoomData = useMemo(() => {
     return roomsData[currentStop] || roomsData[1];
@@ -149,27 +120,6 @@ export default function AdjunctionVisualizer({ language, forcedRoom, onNavigate 
     window.speechSynthesis.onvoiceschanged = loadVoices;
   }, [language]);
 
-  // Reset elements labels depending on stop
-  useEffect(() => {
-    if (visualStop === 2) {
-      setSetElements([
-        { id: '1', label: 'I' },
-        { id: '2', label: 'I' },
-        { id: '3', label: 'I' }
-      ]);
-      setCounitInput('I-I-I');
-    } else {
-      setSetElements([
-        { id: '1', label: 'x' },
-        { id: '2', label: 'y' },
-        { id: '3', label: 'z' }
-      ]);
-      setCounitInput('x-y-z');
-    }
-    setMonoidWords([]);
-    setAnimationState('idle');
-    setCounitResult(null);
-  }, [currentStop]);
 
   // Stop speech when current stop, language, or active tab changes
   useEffect(() => {
@@ -303,121 +253,14 @@ export default function AdjunctionVisualizer({ language, forcedRoom, onNavigate 
     startSpeech(activeSpeechText, targetWord.start);
   };
 
-  const addElement = () => {
-    const labels = visualStop === 2 
-      ? ['I', 'I', 'I', 'I', 'I', 'I']
-      : ['x', 'y', 'z', 'w', 'u', 'v', 'a', 'b', 'c'];
-    
-    if (visualStop === 2) {
-      if (setElements.length >= 8) return;
-      const newId = (setElements.length + 1).toString();
-      setSetElements([...setElements, { id: newId, label: 'I' }]);
-    } else {
-      const usedLabels = setElements.map(e => e.label);
-      const available = labels.filter(l => !usedLabels.includes(l));
-      if (available.length === 0) return;
-      const nextLabel = available[0];
-      const newId = (setElements.length + 1).toString();
-      setSetElements([...setElements, { id: newId, label: nextLabel }]);
-    }
-    setMonoidWords([]);
-  };
-
-  const clearElements = () => {
-    setSetElements([]);
-    setMonoidWords([]);
-    setAnimationState('idle');
-    setCounitResult(null);
-    stopSpeechComplete();
-  };
-
-  // Functor F: Free Generation
-  const triggerFreeGeneration = () => {
-    setAnimationState('free');
-    setCounitResult(null);
-    setTimeout(() => {
-      const letters = setElements.map(e => e.label);
-      if (letters.length === 0) {
-        setMonoidWords(visualStop === 2 ? ['0 (empty)'] : ['ε (empty)']);
-        return;
-      }
-      
-      const generated: string[] = visualStop === 2 ? ['0'] : ['ε']; 
-      if (visualStop === 2) {
-        let tally = '';
-        letters.forEach(() => {
-          tally += 'I';
-          generated.push(tally);
-        });
-      } else {
-        letters.forEach(l => generated.push(`[${l}]`));
-        if (letters.length >= 2) {
-          for (let i = 0; i < letters.length - 1; i++) {
-            generated.push(`[${letters[i]},${letters[i+1]}]`);
-          }
-        }
-        if (letters.length >= 3) {
-          generated.push(`[${letters.slice(0, 3).join(',')}]`);
-        }
-      }
-      
-      setMonoidWords(generated);
-    }, 800);
-  };
-
-  // Functor U: Forgetful
-  const triggerForgetfulCollapse = () => {
-    setAnimationState('forget');
-    setTimeout(() => {
-      setMonoidWords([]);
-    }, 800);
-  };
-
-  // Unit of Adjunction
-  const triggerUnitMap = () => {
-    setAnimationState('unit');
-    triggerFreeGeneration();
-  };
-
-  // Counit of Adjunction
-  const triggerCounitCollapse = () => {
-    setAnimationState('counit');
-    const parts = counitInput.split('-');
-    if (visualStop === 2) {
-      const sum = parts.join('').length;
-      setTimeout(() => {
-        setCounitResult(sum.toString() + ' (mammoths / objects)');
-      }, 1000);
-    } else {
-      const product = parts.join('');
-      setTimeout(() => {
-        setCounitResult(product);
-      }, 1000);
-    }
+  const handleSpeechTrigger = (_word: string) => {
+    // No-op
   };
 
   const getWordAtCharIndex = (text: string, charIdx: number): string | null => {
     const words = getSpokenWords(text, language);
     const match = words.find(w => charIdx >= w.start && charIdx < w.end);
     return match ? match.text : null;
-  };
-
-  const handleSpeechTrigger = (word: string) => {
-    const w = word.toLowerCase();
-    if (w.includes('free') || w.includes('functor') || w.includes('generate') || w.includes('path') || w.includes('monoid') || 
-        w.includes('自由') || w.includes('関手') || w.includes('生成') || w.includes('経路') || w.includes('モノイド')) {
-      triggerFreeGeneration();
-    } else if (w.includes('forgetful') || w.includes('collapse') || w.includes('forget') || w.includes('isomorphism') || 
-               w.includes('忘却') || w.includes('崩壊') || w.includes('忘れる') || w.includes('同型')) {
-      triggerForgetfulCollapse();
-    } else if (w.includes('unit') || w.includes('counit') || w.includes('adjoining') || w.includes('adjunction') || 
-               w.includes('随伴') || w.includes('単位') || w.includes('余単位')) {
-      if (w.includes('counit') || w.includes('余単位')) {
-        triggerCounitCollapse();
-      } else {
-        triggerUnitMap();
-      }
-    }
   };
 
   // Tokenize text into segments with positions
@@ -473,88 +316,6 @@ export default function AdjunctionVisualizer({ language, forcedRoom, onNavigate 
     return result;
   };
 
-  const nextStop = () => {
-    if (currentStop < tourStops.length) {
-      setCurrentStop(currentStop + 1);
-    }
-  };
-
-  // Tour stops definitions (Gradual, rigorous buildup of Free Generation & Quotients)
-  const tourStops: TourStop[] = language === 'ja' ? [
-    {
-      id: 1,
-      title: "I. 美術館入口：存在論的サイクル",
-      subtitle: "人類が記法と意味論を通じて存在を発見した物語。",
-      text: "随伴存在論ツアーへようこそ。数学はその究極の基盤において、自由生成と商化という２つの認知の対話的サイクルそのものです。私たちは最初に文字や記号を一切の制約なしに並べて「構文（Syntax）」を作り出し、次にそれらを方程式によって特定の価値へと折りたたむことで「意味論（Semantics）」を与えます。この一見単純なプロセスこそがすべての数学的構造の起源です。本ツアーでは、骨の刻み目から言語の文法、そして圏論へとこの二重性を段階的に追っていきます。"
-    },
-    {
-      id: 2,
-      title: "II. 数え上げの黎明：石ころと刻み目 (百万年前)",
-      subtitle: "無制限に刻み目を打つ「自由生成」と、個数へ折りたたむ「商化」。",
-      text: "百万年前、私たちの祖先は骨に刻み目（ノッチ）を刻み始めました。追加のルールを持たずに、刻み目 I を I, II, III と無数に刻み続ける行為は、純粋な記号構文の「自由生成」です。しかし、バラバラの刻み目そのものは役に立ちません。これを「5頭の獲物」という単一の数概念へと折りたたむ行為、これこそが「商化」です。バラバラな表記を同値関係でまとめ上げることで、私たちは数を把握したのです。"
-    },
-    {
-      id: 3,
-      title: "III. 言語の誕生：アルファベットと意味論 (古代)",
-      subtitle: "アルファベットから無限の文を生成し、共通概念へと商化させる。",
-      text: "文字を手に入れた人類は、少数の記号から無限の言葉や文を紡ぎ出す能力を獲得しました。ルールを無視してアルファベットを自由に並べる行為は、無制限な記号空間の「自由生成」です。しかし、綴りや言い回しが異なっていても、伝わる核心的なイメージは一つに収縮します。私たちは異なる表現を「同義」としてグループ化（商化）することで、言語に共通の意味論を与えたのです。"
-    },
-    {
-      id: 4,
-      title: "IV. アルゴリズムの時代：構文木とコンパイル (現代)",
-      subtitle: "コード構文を生成し、コンピューターで評価して値へ崩壊させる。",
-      text: "現代のコンピューターサイエンスも、このサイクルを共有しています。コードを書く際、私たちは変数や演算子を自由に並べて「抽象構文木（AST）」を生成します。そしてコンパイラやCPUが二項演算に従って式を再帰的に評価し、最終的な出力値へと「崩壊（Quotient Collapse）」させます。コードの記述が自由生成であり、その実行が商化による値の導出に他なりません。"
-    },
-    {
-      id: 5,
-      title: "V. 定式化：集合とモノイドの圏",
-      subtitle: "認知の往復を、数学的なオブジェクトの接続として記述する。",
-      text: "この知性の往復を、圏論を用いて正式に定義します。構造を持たない生の記号の世界を「集合の圏C」とし、結合ルールを持つ体系を「モノイドの圏D」と呼びます。集合から自由な文字列を作る操作は「自由関手F」であり、モノイドから演算構造を無視して生の文字列に戻す操作は「忘却関手U」です。これらは２つの世界の架け橋です。"
-    },
-    {
-      id: 6,
-      title: "VI. 定式化：随伴 duality (F ⊣ U)",
-      subtitle: "自由生成と商化崩壊を完璧に統合する自然同型。",
-      text: "自由生成と商化のループは、圏論において「随伴（F ⊣ U）」として統合されます。これは、自由モノイド上のすべての準同型写像（崩壊のルール）が、元の生の要素をどこに送るかという最初の写像だけで一意に決定されることを意味します。百万年前に小石を数え始めた人類の思考の必然が、数学の最も美しい随伴の橋によって証明されるのです。"
-    }
-  ] : [
-    {
-      id: 1,
-      title: "I. Gallery Entrance: The Ontological Cycle",
-      subtitle: "The absolute nature of mathematical existence.",
-      text: "Welcome to the Ontology Museum Tour. At its ultimate foundation, mathematics is the dialogical cycle of Free Generation and Quotienting. Every mathematical system is constructed by first freely generating a syntax or space of elements, and then collapsing it by imposing relations and equations to resolve semantics. In this tour, we will explore this duality step-by-step, starting from bone notches and language grammar, to formal Category Theory."
-    },
-    {
-      id: 2,
-      title: "II. The Dawn of Counting: Pebbles and Notches (1M Years Ago)",
-      subtitle: "Generating notches freely and collapsing them into numeric quantities.",
-      text: "A million years ago, our ancestors carved notches on bones to record quantity. Carving notches I, II, III freely with no rules is the free generation of pure syntax. However, raw notches are useless on their own. Folding those discrete marks into a single numeric concept, such as 5, to trade, compare, or share is the quotient collapse. By grouping syntactic marks under bijection, we discovered numbers."
-    },
-    {
-      id: 3,
-      title: "III. The Birth of Language: Alphabet & Semantics (Ancient Eras)",
-      subtitle: "Generating infinite strings of text and collapsing them into shared meaning.",
-      text: "With alphabets, humanity gained the ability to generate infinite sentences. Arranging letters freely to write down expressions represents the free generation of syntax. Quotienting is the mechanism of semantics, where multiple different syntactic formulations or synonyms collapse under a single equivalence class representing a shared definition or meaning."
-    },
-    {
-      id: 4,
-      title: "IV. The Algorithmic Era: Syntax Trees & Evaluation (Modern)",
-      subtitle: "Generating abstract syntax trees and collapsing them into values.",
-      text: "Modern computer science follows the exact same cognitive cycle. We freely assemble variables and operators into nested Abstract Syntax Trees (Syntax). The CPU or compiler then collapses this tree using binary operations, reducing it into a single computed output value (Evaluation). Writing code is free generation, while executing it is quotient collapse."
-    },
-    {
-      id: 5,
-      title: "V. Formalization: Categories of Sets & Monoids",
-      subtitle: "Representing our cognitive cycle with objects and structured categories.",
-      text: "We now introduce Category Theory to formalize this cognitive loop mathematically. Category C of Sets represents the world of raw elements (notches, variables) without structure. Category D of Monoids represents structured objects with associative multiplication. Free generation is represented as the Free Functor F, and collapse is represented as the Forgetful Functor U."
-    },
-    {
-      id: 6,
-      title: "VI. Formalization: The Adjunction Duality (F ⊣ U)",
-      subtitle: "The natural isomorphism uniting notation and meaning.",
-      text: "The ultimate mathematical formalization of our ontology is the Adjunction. It establishes a natural isomorphism between hom-sets. This states that specifying a collapsed evaluation map out of a free structure is identical to choosing where the raw generators map. The cognitive circle that began with notch-carving a million years ago is mathematically unified."
-    }
-  ];
 
   const isSpeaking = activeSpeechText === tabContent[activeTab];
 
@@ -784,217 +545,32 @@ export default function AdjunctionVisualizer({ language, forcedRoom, onNavigate 
 
         {/* Right Column: Dynamic Interactive Exhibit Area (The Kiosk Screen) */}
         <div className="kiosk-panel">
-          
-          {/* STOP 1: Entrance */}
-          {visualStop === 1 && (
-            <div className="entrance-display animate-pop-in">
-              <div className="entrance-icon-container">
-                <Layers size={32} />
-              </div>
-              <h4>{language === 'en' ? 'Free Generation & Collapse' : '自由生成と崩壊'}</h4>
-              <p>
-                {language === 'en'
-                  ? 'Step inside the interactive exhibits. Click below to enter the Sets gallery room, representing raw mathematical generators.'
-                  : '対話型の展示室に入ります。以下をクリックして、生の数学的生成元を表す「集合（Sets）展示室」に進んでください。'
-                }
-              </p>
-              <button onClick={nextStop} className="btn btn-primary">
-                {language === 'en' ? 'Enter Sets Gallery' : '集合展示室へ進む'} <ChevronRight size={12} />
-              </button>
-            </div>
-          )}
-
-          {/* STOP 2: The Dawn of Counting (Pebbles & Notches) */}
-          {visualStop === 2 && (
-            <div className="animate-pop-in" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between', height: '100%', width: '100%' }}>
-              <div>
-                <div className="workspace-title-bar">
-                  <h4 className="workspace-title">{language === 'en' ? 'Notch Tally Workspace' : 'ノッチ集計ワークスペース'}</h4>
-                  <div className="workspace-controls">
-                    <button onClick={addElement} className="btn btn-primary">
-                      {language === 'en' ? '+ Carve Notch' : '+ 刻み目を刻む'}
-                    </button>
-                    <button onClick={clearElements} className="btn btn-secondary" style={{ borderColor: 'rgba(239, 68, 68, 0.3)', color: 'var(--error)' }}>
-                      {language === 'en' ? 'Clear Notches' : 'ノッチを消去'}
-                    </button>
-                  </div>
-                </div>
-                
-                <div className="workspace-canvas">
-                  {setElements.length === 0 ? (
-                    <span className="empty-state">
-                      {language === 'en' ? 'No notches carved yet.' : '刻み目がまだありません。'}
-                    </span>
-                  ) : (
-                    setElements.map((e, index) => (
-                      <div
-                        key={index}
-                        className="set-element floating-node"
-                        style={{ borderStyle: 'dashed', borderRadius: '4px', width: '2rem', height: '3.5rem', fontFamily: 'monospace' }}
-                      >
-                        {e.label}
-                      </div>
-                    ))
-                  )}
-                </div>
-              </div>
-              
-              <div className="workspace-footer">
-                <span>{language === 'en' ? 'Carve notches freely, then proceed to Room III to collapse them.' : 'ノッチを自由に刻んだら、第3室に進んで数へ折りたたんでください。'}</span>
-                <button onClick={nextStop} className="btn btn-primary">
-                  {language === 'en' ? 'Go to Collapse' : '崩壊・商化室へ'} <ChevronRight size={10} />
-                </button>
-              </div>
-            </div>
-          )}
-
-          {/* STOP 3: Pure Quotient Collapse (Folding words) */}
-          {visualStop === 3 && (
-            <div className="animate-pop-in" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between', height: '100%', width: '100%' }}>
-              <div>
-                <h4 className="workspace-title" style={{ marginBottom: '1.5rem' }}>
-                  {language === 'en' ? 'Quotient Collapse' : '商化・崩壊'}
-                </h4>
-                <p className="placard-text" style={{ fontSize: '0.8rem', marginBottom: '1rem' }}>
-                  {language === 'en'
-                    ? 'Enter hyphenated tally marks (e.g. I-I-I) or words, and collapse them into a single numeric concept or meaning:'
-                    : 'ハイフンで区切られたノッチ（例: I-I-I）や単語を入力し、二項演算（積）によって一つの概念へ崩壊させてください：'
-                  }
-                </p>
-                <form onSubmit={handleCounitCollapse} className="counit-form">
-                  <input
-                    type="text"
-                    value={counitInput}
-                    onChange={e => setCounitInput(e.target.value)}
-                    placeholder="I-I-I"
-                    className="input-text"
-                    required
-                  />
-                  <button type="submit" className="btn btn-primary">
-                    {language === 'en' ? 'Collapse' : '崩壊させる'}
-                  </button>
-                </form>
-
-                <div className="workspace-canvas" style={{ minHeight: '120px' }}>
-                  {animationState === 'counit' && (
-                    <div className="counit-result-box" style={{ width: '100%', border: 'none', background: 'transparent', minHeight: 'auto' }}>
-                      {counitResult ? (
-                        <span className="counit-val-result flex items-center gap-1.5" style={{ color: 'var(--success)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                          <CheckCircle2 size={16} /> {language === 'en' ? 'Product:' : '評価結果:'} <span className="font-mono text-secondary ml-2 text-base">{counitResult}</span>
-                        </span>
-                      ) : (
-                        <span className="counit-loading-text">
-                          {language === 'en' ? 'FOLDING SYNTAX...' : '構文の折りたたみ・商化中...'}
-                        </span>
-                      )}
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* STOP 4: The Dual Play */}
-          {visualStop === 4 && (
-            <div className="animate-pop-in" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between', height: '100%', width: '100%' }}>
-              <div>
-                <h4 className="workspace-title" style={{ marginBottom: '1rem' }}>
-                  {language === 'en' ? 'Dual Play: Inclusion & Evaluation' : '双対の戯れ：包摂と評価'}
-                </h4>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
-                  <button onClick={triggerUnitMap} disabled={setElements.length === 0} className="btn btn-primary text-[9px]">
-                    {language === 'en' ? '1. Trigger η_X' : '1. 包摂 (η_X) を実行'}
-                  </button>
-                  <button onClick={triggerCounitCollapse} className="btn btn-secondary text-[9px]">
-                    {language === 'en' ? '2. Trigger ε_M' : '2. 評価 (ε_M) を実行'}
-                  </button>
-                </div>
-
-                <div className="unit-list" style={{ maxHeight: '140px' }}>
-                  {setElements.map((e, index) => (
-                    <div key={index} className="unit-row">
-                      <span className="unit-val-src">{e.label}</span>
-                      <ArrowRight size={12} className="text-text-muted" />
-                      <span className="unit-val-target">
-                        {animationState === 'unit' ? `[${e.label}]` : '?'}
-                      </span>
-                      <span className="unit-val-desc" style={{ fontSize: '9px' }}>
-                        {animationState === 'unit' 
-                          ? (language === 'en' ? 'singleton (η)' : '単一単語 (η)') 
-                          : (language === 'en' ? 'raw element' : '生の要素')
-                        }
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* STOP 5: Categories of Sets and Monoids */}
-          {visualStop === 5 && (
-            <div className="animate-pop-in" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between', height: '100%', width: '100%' }}>
-              <div>
-                <h4 className="workspace-title" style={{ marginBottom: '1rem' }}>
-                  {language === 'en' ? 'Mapping between Categories C and D' : '圏 C と 圏 D の間の写像'}
-                </h4>
-                
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', marginBottom: '1.5rem' }}>
-                  <button onClick={triggerFreeGeneration} disabled={setElements.length === 0} className="btn btn-primary">
-                    {language === 'en' ? 'Apply Functor F' : '関手 F を適用'}
-                  </button>
-                  <button onClick={triggerForgetfulCollapse} disabled={monoidWords.length === 0} className="btn btn-secondary">
-                    {language === 'en' ? 'Apply Functor U' : '関手 U を適用'}
-                  </button>
-                </div>
-
-                <div className="workspace-canvas">
-                  {monoidWords.length === 0 ? (
-                    <span className="empty-state">
-                      {language === 'en' ? 'No structure. Categories disconnected.' : '構造なし。圏の接続は切断されています。'}
-                    </span>
-                  ) : (
-                    <div className="monoid-words-grid">
-                      {monoidWords.map((word, idx) => (
-                        <div key={idx} className="monoid-item floating-node">
-                          {word}
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* STOP 6: Adjunction Duality (F ⊣ U) */}
-          {visualStop === 6 && (
-            <div className="animate-pop-in text-center">
-              <div className="bridge-box">
-                <div className="bridge-term primary">hom(F(X), M)</div>
-                <div className="bridge-iso-symbol">≅</div>
-                <div className="bridge-term secondary">hom(X, U(M))</div>
-              </div>
-              <h4 className="bridge-label">{language === 'en' ? 'Natural Isomorphism Duality' : '自然同型の双対性'}</h4>
-              <p className="bridge-text">
-                {language === 'en'
-                  ? 'Universal property of free monoids. Mapping plain elements to any monoid automatically, uniquely induces a full structure-preserving Monoid Homomorphism out of the Free Monoid.'
-                  : '自由モノイドの普遍的性質。構造を持たない集合の要素から他のモノイドへの写像を定義すると、それは自動的かつ一意に自由モノイドからの構造保存準同型写像を誘起します。'
-                }
-              </p>
-            </div>
-          )}
-
+          {currentStop === 1 && <OntologicalCycleVisualizer language={language} />}
+          {currentStop === 2 && <LebomboBoneVisualizer language={language} />}
+          {currentStop === 3 && <SumerianBullaVisualizer language={language} />}
+          {currentStop === 4 && <IncaQuipuVisualizer language={language} />}
+          {currentStop === 5 && <LanguageSynonymyVisualizer language={language} />}
+          {currentStop === 6 && <LindenbaumTarskiVisualizer language={language} />}
+          {currentStop === 7 && <TextileWeavingVisualizer language={language} />}
+          {currentStop === 8 && <OrigamiCreaseVisualizer language={language} />}
+          {currentStop === 10 && <ProjectiveGeometryVisualizer language={language} />}
+          {currentStop === 11 && <PathHomotopyVisualizer language={language} />}
+          {currentStop === 12 && <EinsteinSpacetimeVisualizer language={language} />}
+          {currentStop === 13 && <LambdaCalculusVisualizer language={language} />}
+          {currentStop === 15 && <RelationalAlgebraVisualizer language={language} />}
+          {currentStop === 16 && <RegExAutomataVisualizer language={language} />}
+          {currentStop === 17 && <TypeTheoryVisualizer language={language} />}
+          {currentStop === 18 && <HoTTVisualizer language={language} />}
+          {currentStop === 19 && <CategorySetsVisualizer language={language} />}
+          {currentStop === 20 && <CategoryMonoidsVisualizer language={language} />}
+          {currentStop === 21 && <FunctorialBridgesVisualizer language={language} />}
+          {currentStop === 22 && <AdjunctionDualityVisualizer language={language} />}
+          {currentStop === 23 && <UnitCounitVisualizer language={language} />}
+          {currentStop === 24 && <MonadsVisualizer language={language} />}
         </div>
 
       </div>
 
     </div>
   );
-
-  function handleCounitCollapse(e: React.FormEvent) {
-    e.preventDefault();
-    setCounitResult(null);
-    triggerCounitCollapse();
-  }
 }

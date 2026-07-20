@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { 
-  BookOpen, ArrowRight, CheckCircle2
+  BookOpen, ArrowRight, CheckCircle2, Play, Pause, FastForward, Rewind
 } from 'lucide-react';
 import { roomsData } from '../data/curriculumData';
 
@@ -14,6 +14,14 @@ interface MorphismArrow {
   from: string;
   to: string;
 }
+
+interface SpokenWord {
+  text: string;
+  start: number;
+  end: number;
+}
+
+let activeUtteranceRef: SpeechSynthesisUtterance | null = null;
 
 export default function FoundationsVisualizer({ language, forcedRoom, onNavigate }: FoundationsVisualizerProps) {
   const activeRoomData = useMemo(() => {
@@ -30,7 +38,11 @@ export default function FoundationsVisualizer({ language, forcedRoom, onNavigate
   const [activeSpeechText, setActiveSpeechText] = useState<string | null>(null);
   const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
   const [selectedVoiceName, setSelectedVoiceName] = useState<string>('');
-  const speedMultiplier = 1.0;
+  const [currentCharIndex, setCurrentCharIndex] = useState<number>(-1);
+  const [speedMultiplier, setSpeedMultiplier] = useState<number>(1.0);
+  const [isPaused, setIsPaused] = useState<boolean>(false);
+
+  const isSpeaking = activeSpeechText !== null;
 
   // Stop 1: Free Generation state
   const generators = ['a', 'b'];
@@ -91,47 +103,203 @@ export default function FoundationsVisualizer({ language, forcedRoom, onNavigate
     }
   }, [language]);
 
-  const speakCurrentStop = (textToSpeak: string) => {
-    if (typeof window === 'undefined' || !('speechSynthesis' in window)) return;
-    window.speechSynthesis.cancel();
-    setActiveSpeechText(textToSpeak);
-
-    const utterance = new SpeechSynthesisUtterance(textToSpeak);
-    utterance.lang = language === 'ja' ? 'ja-JP' : 'en-US';
-    
-    if (selectedVoiceName) {
-      const voiceObj = voices.find(v => v.name === selectedVoiceName);
-      if (voiceObj) utterance.voice = voiceObj;
+  const stopSpeechComplete = () => {
+    if (activeUtteranceRef) {
+      activeUtteranceRef.onboundary = null;
+      activeUtteranceRef.onend = null;
+      activeUtteranceRef.onerror = null;
+      activeUtteranceRef = null;
     }
+    setActiveSpeechText(null);
+    setCurrentCharIndex(-1);
+    setIsPaused(false);
+  };
 
-    utterance.rate = 0.9 * speedMultiplier;
+  const startSpeech = (text: string, startIndex: number) => {
+    if (!('speechSynthesis' in window)) return;
+    window.speechSynthesis.cancel();
+    
+    // Brief timeout to let cancel finish
+    setTimeout(() => {
+      const sliceText = text.substring(startIndex);
+      if (!sliceText.trim()) {
+        stopSpeechComplete();
+        return;
+      }
 
-    utterance.onend = () => {
-      setActiveSpeechText(null);
-    };
+      const cleanText = ", " + sliceText.replace(/[\$\{\}\[\]\(\)⊣→≅↦]/g, ' '); 
+      const utterance = new SpeechSynthesisUtterance(cleanText);
+      activeUtteranceRef = utterance;
+      
+      const voice = voices.find(v => v.name === selectedVoiceName);
+      if (voice) {
+        utterance.voice = voice;
+      }
 
-    window.speechSynthesis.speak(utterance);
+      const baseRate = language === 'ja' ? 0.95 : 0.92;
+      utterance.rate = baseRate * speedMultiplier;
+      utterance.pitch = 1.0;
+
+      utterance.onboundary = (event) => {
+        if (event.name === 'word') {
+          const adjustedCharIdx = event.charIndex - 2;
+          if (adjustedCharIdx >= 0) {
+            const currentIdx = startIndex + adjustedCharIdx;
+            setCurrentCharIndex(currentIdx);
+          }
+        }
+      };
+
+      utterance.onend = () => {
+        setTimeout(() => {
+          if (!window.speechSynthesis.speaking && !window.speechSynthesis.pending) {
+            stopSpeechComplete();
+          }
+        }, 60);
+      };
+
+      utterance.onerror = () => {
+        stopSpeechComplete();
+      };
+
+      window.speechSynthesis.speak(utterance);
+      setActiveSpeechText(text);
+      setIsPaused(false);
+      setCurrentCharIndex(startIndex);
+    }, 100);
+  };
+
+  const speakCurrentStop = (text: string) => {
+    if (!('speechSynthesis' in window)) return;
+
+    if (activeSpeechText === text) {
+      if (isPaused) {
+        window.speechSynthesis.resume();
+        setIsPaused(false);
+      } else {
+        window.speechSynthesis.pause();
+        setIsPaused(true);
+      }
+    } else {
+      startSpeech(text, 0);
+    }
   };
 
   const stopSpeech = () => {
+    stopSpeechComplete();
     if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
       window.speechSynthesis.cancel();
     }
-    setActiveSpeechText(null);
   };
 
-  // Math equation renderer helper
+  const handleSeek = (direction: 'fwd' | 'rwd') => {
+    if (!activeSpeechText) return;
+    const words = getSpokenWords(activeSpeechText, language);
+    if (words.length === 0) return;
+
+    let currentWordIdx = words.findIndex(
+      w => currentCharIndex >= w.start && currentCharIndex <= w.end
+    );
+    if (currentWordIdx === -1) {
+      currentWordIdx = words.findIndex(w => w.start > currentCharIndex);
+      if (currentWordIdx === -1) currentWordIdx = words.length - 1;
+    }
+
+    const wordSkip = 4;
+    let targetWordIdx = direction === 'fwd' 
+      ? Math.min(words.length - 1, currentWordIdx + wordSkip) 
+      : Math.max(0, currentWordIdx - wordSkip);
+
+    const targetWord = words[targetWordIdx];
+    startSpeech(activeSpeechText, targetWord.start);
+  };
+
+  const getSpokenWords = (text: string, lang: 'en' | 'ja'): SpokenWord[] => {
+    const words: SpokenWord[] = [];
+    if (lang === 'ja') {
+      for (let i = 0; i < text.length; i++) {
+        words.push({ text: text[i], start: i, end: i + 1 });
+      }
+    } else {
+      const wordRegex = /[a-zA-Z0-9'’⊣→≅↦ηε\(\)\{\}\-\:\,]+/g;
+      let match;
+      while ((match = wordRegex.exec(text)) !== null) {
+        words.push({
+          text: match[0],
+          start: match.index,
+          end: match.index + match[0].length
+        });
+      }
+    }
+    return words;
+  };
+
+  // Math equation renderer helper that splits into words/symbols for highlighting & click-to-seek
   const renderHighlightedText = (text: string) => {
-    const parts = text.split(/(\$\$[^\$]+\$\$|\$[^\$]+\$)/g);
-    return parts.map((part, i) => {
-      if (part.startsWith('$$') && part.endsWith('$$')) {
-        return <div key={i} className="math-block font-serif text-center my-4 text-primary">{part.slice(2, -2)}</div>;
+    const words = getSpokenWords(text, language);
+    let result: React.ReactNode[] = [];
+    let lastIdx = 0;
+    
+    words.forEach((w, idx) => {
+      if (w.start > lastIdx) {
+        const betweenText = text.substring(lastIdx, w.start);
+        const parts = betweenText.split(/(\$\$[^\$]+\$\$|\$[^\$]+\$)/g);
+        parts.forEach((part, pidx) => {
+          if (part.startsWith('$$') && part.endsWith('$$')) {
+            result.push(<div key={`math-b-${idx}-${pidx}`} className="math-block font-serif text-center my-4 text-primary">{part.slice(2, -2)}</div>);
+          } else if (part.startsWith('$') && part.endsWith('$')) {
+            result.push(<span key={`math-i-${idx}-${pidx}`} className="math-inline font-serif text-secondary px-0.5">{part.slice(1, -1)}</span>);
+          } else {
+            result.push(part);
+          }
+        });
       }
-      if (part.startsWith('$') && part.endsWith('$')) {
-        return <span key={i} className="math-inline font-serif text-primary px-0.5">{part.slice(1, -1)}</span>;
+      
+      const isCurrent = currentCharIndex >= w.start && currentCharIndex < w.end;
+      
+      if (w.text.startsWith('$') && w.text.endsWith('$')) {
+        result.push(
+          <span 
+            key={`word-${idx}`} 
+            className={isCurrent ? "word-highlight" : "word-normal"}
+            onClick={() => startSpeech(text, w.start)}
+            style={{ cursor: 'pointer' }}
+            title={language === 'en' ? 'Click to play from here' : 'ここから再生'}
+          >
+            <span className="math-inline font-serif text-secondary px-0.5">{w.text.slice(1, -1)}</span>
+          </span>
+        );
+      } else {
+        result.push(
+          <span 
+            key={`word-${idx}`} 
+            className={isCurrent ? "word-highlight" : "word-normal"}
+            onClick={() => startSpeech(text, w.start)}
+            style={{ cursor: 'pointer' }}
+            title={language === 'en' ? 'Click to play from here' : 'ここから再生'}
+          >
+            {w.text}
+          </span>
+        );
       }
-      return <span key={i}>{part}</span>;
+      lastIdx = w.end;
     });
+    
+    if (lastIdx < text.length) {
+      const remainingText = text.substring(lastIdx);
+      const parts = remainingText.split(/(\$\$[^\$]+\$\$|\$[^\$]+\$)/g);
+      parts.forEach((part, pidx) => {
+        if (part.startsWith('$$') && part.endsWith('$$')) {
+          result.push(<div key={`math-b-end-${pidx}`} className="math-block font-serif text-center my-4 text-primary">{part.slice(2, -2)}</div>);
+        } else if (part.startsWith('$') && part.endsWith('$')) {
+          result.push(<span key={`math-i-end-${pidx}`} className="math-inline font-serif text-secondary px-0.5">{part.slice(1, -1)}</span>);
+        } else {
+          result.push(part);
+        }
+      });
+    }
+    
+    return result;
   };
 
   // Stop 1: Append Free character
@@ -194,36 +362,6 @@ export default function FoundationsVisualizer({ language, forcedRoom, onNavigate
 
   return (
     <div className="museum-exhibit-container">
-      {/* Audio guide status block */}
-      <div className="audio-companion-bar" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.75rem 1.25rem', background: 'rgba(255,191,0,0.03)', border: '1px solid rgba(255,191,0,0.1)', borderRadius: '8px', marginBottom: '1rem' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-          <button 
-            onClick={() => speakCurrentStop(tabContent[activeTab])} 
-            className={`btn-voice ${activeSpeechText ? 'active' : ''}`}
-            style={{ padding: '6px 12px', fontSize: '0.7rem' }}
-          >
-            {activeSpeechText ? (language === 'en' ? 'Playing Audio...' : '音声再生中...') : (language === 'en' ? 'Listen to Placard' : '解説を聞く')}
-          </button>
-          {activeSpeechText && (
-            <button onClick={stopSpeech} className="btn-voice" style={{ background: 'rgba(239,68,68,0.2)', color: '#ef4444', border: '1px solid rgba(239,68,68,0.3)', padding: '6px 12px', fontSize: '0.7rem' }}>
-              Stop
-            </button>
-          )}
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.7rem', color: 'var(--text-muted)' }}>
-          <span>Voice:</span>
-          <select 
-            value={selectedVoiceName} 
-            onChange={e => setSelectedVoiceName(e.target.value)}
-            style={{ background: 'rgba(0,0,0,0.5)', color: 'white', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '4px', fontSize: '0.65rem', padding: '2px' }}
-          >
-            <option value="">Default OS Voice</option>
-            {voices.map(v => (
-              <option key={v.name} value={v.name}>{v.name}</option>
-            ))}
-          </select>
-        </div>
-      </div>
 
       <div className="exhibit-grid">
         {/* Left Side: Dynamic placard panel */}
@@ -263,6 +401,100 @@ export default function FoundationsVisualizer({ language, forcedRoom, onNavigate
                      (language === 'en' ? 'Exercises' : '演習')}
                   </button>
                 ))}
+              </div>
+
+              {/* Premium Audio Guide receiver dashboard */}
+              <div className="audio-guide-player" style={{ marginBottom: '1.25rem', padding: '0.6rem 1rem', gap: '1rem', borderRadius: '0.75rem' }}>
+                <div className="device-info">
+                  <div className="device-screen" style={{ width: '2rem', height: '2rem', borderRadius: '0.5rem', fontSize: '0.55rem', fontFamily: 'monospace' }}>
+                    {isSpeaking ? 'ON' : 'OFF'}
+                  </div>
+                  <div className="device-meta">
+                    <h4 style={{ fontSize: '0.55rem' }}>{language === 'en' ? 'Audio Companion' : '音声ガイド'}</h4>
+                    <p style={{ fontSize: '0.5rem' }}>{activeTab.toUpperCase()}</p>
+                  </div>
+                </div>
+
+                <div className="audio-controls-group" style={{ gap: '0.5rem', padding: '0.2rem 0.75rem' }}>
+                  {voices.length > 0 && (
+                    <select
+                      value={selectedVoiceName}
+                      onChange={(e) => setSelectedVoiceName(e.target.value)}
+                      className="input-text"
+                      style={{ 
+                        width: '100px', 
+                        fontSize: '0.6rem', 
+                        padding: '1px 4px', 
+                        height: '24px', 
+                        background: 'rgba(0,0,0,0.5)',
+                        border: '1px solid rgba(212,175,55,0.3)',
+                        color: 'var(--primary)',
+                        cursor: 'pointer',
+                        borderRadius: '6px'
+                      }}
+                    >
+                      <option value="">{language === 'en' ? 'Default Voice' : 'デフォルト音声'}</option>
+                      {voices.map((v, i) => (
+                        <option key={i} value={v.name} style={{ background: '#0b0f19', color: '#fff' }}>
+                          {v.name.replace('Microsoft', 'MS').replace('Google', 'G').replace('日本語', 'JP')}
+                        </option>
+                      ))}
+                    </select>
+                  )}
+
+                  <select
+                    value={speedMultiplier.toString()}
+                    onChange={(e) => setSpeedMultiplier(parseFloat(e.target.value))}
+                    className="input-text"
+                    style={{ 
+                      width: '64px', 
+                      fontSize: '0.65rem', 
+                      padding: '2px 4px', 
+                      height: '24px', 
+                      background: 'rgba(0,0,0,0.5)',
+                      border: '1px solid rgba(212,175,55,0.3)',
+                      color: 'var(--primary)',
+                      cursor: 'pointer',
+                      borderRadius: '6px'
+                    }}
+                  >
+                    <option value="0.8">0.80x</option>
+                    <option value="1">1.00x</option>
+                    <option value="1.25">1.25x</option>
+                    <option value="1.5">1.50x</option>
+                  </select>
+
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                    <button
+                      onClick={() => handleSeek('rwd')}
+                      disabled={!isSpeaking}
+                      className="btn btn-outline"
+                      style={{ width: '24px', height: '24px', padding: '0', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                      title={language === 'en' ? 'Rewind' : '巻き戻し'}
+                    >
+                      <Rewind size={10} />
+                    </button>
+
+                    <button
+                      onClick={() => speakCurrentStop(tabContent[activeTab])}
+                      className="btn btn-primary"
+                      style={{ width: '28px', height: '28px', padding: '0', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '50%' }}
+                      title={isSpeaking && !isPaused ? (language === 'en' ? 'Pause' : '一時停止') : (language === 'en' ? 'Play' : '再生')}
+                    >
+                      {isSpeaking && !isPaused ? <Pause size={10} /> : <Play size={10} />}
+                    </button>
+
+                    <button
+                      onClick={() => handleSeek('fwd')}
+                      disabled={!isSpeaking}
+                      className="btn btn-outline"
+                      style={{ width: '24px', height: '24px', padding: '0', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                      title={language === 'en' ? 'Fast Forward' : '早送り'}
+                    >
+                      <FastForward size={10} />
+                    </button>
+                  </div>
+                </div>
               </div>
 
               <div className="placard-text" style={{ fontSize: '0.85rem', lineHeight: '1.6', color: 'var(--text-muted)', minHeight: '140px', whiteSpace: 'pre-line' }}>

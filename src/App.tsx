@@ -14,7 +14,7 @@ export default function App() {
             MathBasics
           </h1>
           <p className="text-text-muted max-w-lg mx-auto text-sm sm:text-base leading-relaxed">
-            Free Generation and Collapse: The universal dynamics of Adjoint Functors ($F \dashv U$) in Category Theory.
+            Free Generation and Collapse: The universal dynamics of Adjoint Functors (F ⊣ U) in Category Theory.
           </p>
         </header>
 

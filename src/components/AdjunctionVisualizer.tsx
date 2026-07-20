@@ -106,6 +106,18 @@ export default function AdjunctionVisualizer() {
         </p>
       </div>
 
+      {/* Universal Math Core Preamble */}
+      <div className="glass-panel p-6 mb-8 border-l-4 border-l-primary/60 bg-gradient-to-r from-slate-900/40 via-slate-950/20 to-slate-900/40">
+        <h3 className="text-sm font-extrabold text-primary uppercase tracking-wider mb-2 flex items-center gap-1.5 font-mono">
+          <Sparkles size={14} className="text-accent" /> The Universal Core of Mathematics
+        </h3>
+        <p className="text-xs sm:text-sm text-text-muted leading-relaxed font-sans">
+          At its most fundamental level, the entirety of mathematics can be viewed as the dynamic interplay between two dual actions: <strong>Free Generation</strong> (the Left Adjoint) and <strong>Collapse/Forgetfulness</strong> (the Right Adjoint). 
+          Every structured mathematical system—whether in algebra (generating free groups and folding operations), topology (equipping sets with discrete spaces and stripping them down), or computer science (building complex syntax trees and compiling/evaluating them)—arises from this universal adjunction (F ⊣ U). 
+          Here, we explore this profound duality through the classic adjunction between Sets and Monoids.
+        </p>
+      </div>
+
       {/* Dual Category Panes */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
         
@@ -126,7 +138,7 @@ export default function AdjunctionVisualizer() {
               </div>
             </div>
             <p className="text-xs text-text-muted mb-6 leading-relaxed">
-              Discrete elements without structure or binary operations. Plain dots representing the set $X = {'{'} {setElements.map(e => e.label).join(', ')} {'}'}$.
+              Discrete elements without structure or binary operations. Plain dots representing the set X = {'{'} {setElements.map(e => e.label).join(', ')} {'}'}.
             </p>
 
             {/* Set Workspace Canvas */}
@@ -156,14 +168,14 @@ export default function AdjunctionVisualizer() {
               disabled={setElements.length === 0}
               className="btn btn-primary w-full text-sm font-semibold"
             >
-              Generate Structure (Free Functor $F$) <Sparkles size={16} />
+              Generate Structure (Free Functor F) <Sparkles size={16} />
             </button>
             <button
               onClick={triggerUnitMap}
               disabled={setElements.length === 0}
               className="btn btn-outline w-full text-xs font-semibold"
             >
-              Visualize Adjunction Unit ($\eta_X: X \to U(F(X))$)
+              Visualize Adjunction Unit (η_X : X → U(F(X)))
             </button>
           </div>
         </div>
@@ -180,7 +192,7 @@ export default function AdjunctionVisualizer() {
               </div>
             </div>
             <p className="text-xs text-text-muted mb-6 leading-relaxed">
-              Algebraic structure containing identity ($\varepsilon$) and associative multiplication. Here, $F(X)$ is the free monoid of words over $X$.
+              Algebraic structure containing identity (ε) and associative multiplication. Here, F(X) is the free monoid of words over X.
             </p>
 
             {/* Monoid Workspace Canvas */}
@@ -218,10 +230,10 @@ export default function AdjunctionVisualizer() {
               disabled={monoidWords.length === 0}
               className="btn btn-secondary w-full text-sm font-semibold"
             >
-              Collapse/Forget Structure (Forgetful Functor $U$) <LogOut size={16} />
+              Collapse/Forget Structure (Forgetful Functor U) <LogOut size={16} />
             </button>
             <a href="#counit-workspace" className="btn btn-outline w-full text-xs font-semibold">
-              Visualize Adjunction Counit ($\varepsilon_M$)
+              Visualize Adjunction Counit (ε_M)
             </a>
           </div>
         </div>
@@ -231,21 +243,21 @@ export default function AdjunctionVisualizer() {
       {/* Concept Explainer Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8 text-sm">
         <div className="glass-panel p-5">
-          <h4 className="font-bold mb-2 text-primary">1. Left Adjoint (Free Functor $F$)</h4>
+          <h4 className="font-bold mb-2 text-primary">1. Left Adjoint (Free Functor F)</h4>
           <p className="text-xs text-text-muted leading-relaxed">
-            Takes a raw set of points $X$ in Sets and <em>freely generates</em> the free monoid $F(X)$ containing all lists/words. This is the "least constrained" way to turn a set into a monoid without imposing any arbitrary equations.
+            Takes a raw set of points X in Sets and <em>freely generates</em> the free monoid F(X) containing all lists/words. This is the "least constrained" way to turn a set into a monoid without imposing any arbitrary equations.
           </p>
         </div>
         <div className="glass-panel p-5">
-          <h4 className="font-bold mb-2 text-secondary">2. Right Adjoint (Forgetful $U$)</h4>
+          <h4 className="font-bold mb-2 text-secondary">2. Right Adjoint (Forgetful U)</h4>
           <p className="text-xs text-text-muted leading-relaxed">
-            Takes a structured Monoid $M$ in Monoids and strips away the associative operation and identity element, returning the simple underlying set of elements $U(M)$. It represents a loss/collapse of structure.
+            Takes a structured Monoid M in Monoids and strips away the associative operation and identity element, returning the simple underlying set of elements U(M). It represents a loss/collapse of structure.
           </p>
         </div>
         <div className="glass-panel p-5">
-          <h4 className="font-bold mb-2 text-accent">3. The Adjunction ($F \dashv U$)</h4>
+          <h4 className="font-bold mb-2 text-accent">3. The Adjunction (F ⊣ U)</h4>
           <p className="text-xs text-text-muted leading-relaxed">
-            An adjunction asserts a natural isomorphism $\hom(F(X), M) \cong \hom(X, U(M))$. Defining a monoid homomorphism out of a free monoid is exactly equivalent to choosing where the raw generators go.
+            An adjunction asserts a natural isomorphism hom(F(X), M) ≅ hom(X, U(M)). Defining a monoid homomorphism out of a free monoid is exactly equivalent to choosing where the raw generators go.
           </p>
         </div>
       </div>
@@ -253,20 +265,20 @@ export default function AdjunctionVisualizer() {
       {/* Adjunction Unit & Counit Visualization Panel */}
       <div id="counit-workspace" className="glass-panel p-8 mb-8 animate-pop-in">
         <h3 className="text-xl font-bold mb-4 flex items-center gap-2">
-          <Layers className="text-accent" /> Adjunction Unit ($\eta$) and Counit ($\varepsilon$) in Action
+          <Layers className="text-accent" /> Adjunction Unit (η) and Counit (ε) in Action
         </h3>
         <p className="text-xs text-text-muted mb-6 leading-relaxed">
-          The Unit $\eta_X$ embeds elements into the free list ($x \mapsto [x]$). The Counit $\varepsilon_M$ evaluates and collapses a freely generated word of monoid elements into their actual product using the monoid multiplication operation.
+          The Unit η_X embeds elements into the free list (x ↦ [x]). The Counit ε_M evaluates and collapses a freely generated word of monoid elements into their actual product using the monoid multiplication operation.
         </p>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
           {/* Unit Simulation */}
           <div className="bg-slate-950/40 border border-slate-800/80 rounded-2xl p-6">
             <h4 className="text-sm font-bold mb-3 text-primary flex items-center gap-1.5">
-              Unit Mapping ($\eta_X$)
+              Unit Mapping (η_X)
             </h4>
             <p className="text-xs text-text-muted mb-4 leading-relaxed">
-              Every element in the Set $X$ canonically injects as a singleton word in the Free Monoid $F(X)$.
+              Every element in the Set X canonically injects as a singleton word in the Free Monoid F(X).
             </p>
             <div className="flex flex-col gap-2 font-mono text-xs">
               {setElements.map(e => (
@@ -283,7 +295,7 @@ export default function AdjunctionVisualizer() {
           {/* Counit Simulation */}
           <div className="bg-slate-950/40 border border-slate-800/80 rounded-2xl p-6">
             <h4 className="text-sm font-bold mb-3 text-accent flex items-center gap-1.5">
-              Counit Evaluation ($\varepsilon_M$)
+              Counit Evaluation (ε_M)
             </h4>
             <p className="text-xs text-text-muted mb-4 leading-relaxed">
               Input a word of monoid elements separated by hyphens (e.g. <code>x-y-z</code>) and click collapse to evaluate the product.

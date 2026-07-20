@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { 
-  ArrowRight, Layers, RefreshCw, Sparkles, LogOut, 
+  ArrowRight, Layers, 
   CheckCircle2, Volume2, VolumeX, ChevronLeft, ChevronRight, BookOpen 
 } from 'lucide-react';
 
@@ -46,42 +46,23 @@ export default function AdjunctionVisualizer({ language }: { language: 'en' | 'j
       const filteredVoices = allVoices.filter(v => v.lang.startsWith(langPrefix));
       setVoices(filteredVoices);
 
-      // Auto-select the best available voice with prioritization
       const scoredVoices = filteredVoices.map(v => {
         let score = 0;
         const nameLower = v.name.toLowerCase();
         const langLower = v.lang.toLowerCase();
 
         if (language === 'en') {
-          // Prioritize United States English
-          if (langLower.includes('en-us') || langLower.includes('en_us')) {
-            score += 100;
-          }
-          // Prioritize neural / high quality online voices
-          if (nameLower.includes('natural') || nameLower.includes('neural') || nameLower.includes('online')) {
-            score += 50;
-          }
-          // Prioritize Google / Microsoft premium voices
-          if (nameLower.includes('google') || nameLower.includes('microsoft') || nameLower.includes('apple')) {
-            score += 30;
-          }
-          // Prioritize specific premium US voices
-          if (nameLower.includes('aria') || nameLower.includes('guy') || nameLower.includes('samantha') || nameLower.includes('female') || nameLower.includes('male') || nameLower.includes('man') || nameLower.includes('woman')) {
-            score += 20;
-          }
+          if (langLower.includes('en-us') || langLower.includes('en_us')) score += 100;
+          if (nameLower.includes('natural') || nameLower.includes('neural') || nameLower.includes('online')) score += 50;
+          if (nameLower.includes('google') || nameLower.includes('microsoft') || nameLower.includes('apple')) score += 30;
+          if (nameLower.includes('aria') || nameLower.includes('guy') || nameLower.includes('samantha') || nameLower.includes('female') || nameLower.includes('male')) score += 20;
         } else {
-          // Prioritize Japanese premium voices
-          if (nameLower.includes('google') || nameLower.includes('natural') || nameLower.includes('neural') || nameLower.includes('online')) {
-            score += 50;
-          }
-          if (nameLower.includes('sayaka') || nameLower.includes('haruka') || nameLower.includes('ichiro')) {
-            score += 20;
-          }
+          if (nameLower.includes('google') || nameLower.includes('natural') || nameLower.includes('neural') || nameLower.includes('online')) score += 50;
+          if (nameLower.includes('sayaka') || nameLower.includes('haruka')) score += 20;
         }
         return { voice: v, score };
       });
 
-      // Sort descending by score
       scoredVoices.sort((a, b) => b.score - a.score);
       const bestVoice = scoredVoices[0]?.voice || filteredVoices[0];
 
@@ -94,7 +75,7 @@ export default function AdjunctionVisualizer({ language }: { language: 'en' | 'j
     window.speechSynthesis.onvoiceschanged = loadVoices;
   }, [language]);
 
-  // Stop speech when component unmounts or stop/language changes
+  // Stop speech when current stop or language changes
   useEffect(() => {
     if ('speechSynthesis' in window) {
       window.speechSynthesis.cancel();
@@ -117,17 +98,14 @@ export default function AdjunctionVisualizer({ language }: { language: 'en' | 'j
         setActiveSpeechText(null);
       } else {
         window.speechSynthesis.cancel(); // Stop current speech
-        // Clean mathematical symbols for clear TTS reading
         const cleanText = text.replace(/[\$\{\}\[\]\(\)⊣→≅↦]/g, ' '); 
         const utterance = new SpeechSynthesisUtterance(cleanText);
         
-        // Apply selected voice
         const voice = voices.find(v => v.name === selectedVoiceName);
         if (voice) {
           utterance.voice = voice;
         }
 
-        // Adjust rate for premium museum feel
         utterance.rate = language === 'ja' ? 0.95 : 0.92;
         utterance.pitch = 1.0;
 
@@ -214,122 +192,126 @@ export default function AdjunctionVisualizer({ language }: { language: 'en' | 'j
     }, 1000);
   };
 
-  // Tour stops definitions in EN and JP
+  // Tour stops definitions
   const tourStops: TourStop[] = language === 'ja' ? [
     {
       id: 1,
       title: "I. 美術館入口：存在論的サイクル",
       subtitle: "数学的実体の絶対的なあり方について。",
-      audioText: "随伴存在論ツアーへようこそ。数学はその究極の基盤において、自由生成と、崩壊ないし商化の構造的サイクルそのものです。すべての数学的システムは、最初に記号や要素の空間を自由に生成し、次に同値関係や方程式を課すことでそれを崩壊させることによって構築されます。圏論は、この存在論的サイクルを随伴関手や単位・余単位として定式化した部分言語に過ぎません。本日は、集合とモノイドの古典的な例を通して、この現実を体験してください。",
+      audioText: "随伴存在論ツアーへようこそ。数学はその究極の基盤において、自由生成と、崩壊ないし商化の構造的サイクルそのものです。すべての数学的システムは、最初に記号や要素の空間を自由に生成し、次に同値関係や方程式を課すことでそれを崩壊させることによって構築されます。本ツアーでは、最初にこのサイクルを最も直感的な言葉で体験し、最後に圏論を使った数学的定式化を学びます。",
       explanation: (
         <div className="placard-text">
           <p>
-            <strong>存在論（オントロジー）ギャラリー</strong>へようこそ。 
+            <strong>存在論（オントロジー）ギャラリー</strong>へようこそ。
           </p>
           <p>
-            数学とはその究極の基盤において、<strong>「自由生成 (Free Generation)」</strong>と<strong>「崩壊・商化 (Collapse / Quotienting)」</strong>の構造的サイクルそのものです。
+            数学とはその究極の基盤において、<strong>「自由生成 (Free Generation)」</strong>と<strong>「崩壊・商化 (Collapse / Quotienting)」</strong>の構造的サイクルその事です。
           </p>
           <p>
-            あらゆる数学的対象は、最初に記号や要素の空間を「自由に生成」し、次に関係や方程式を課して「崩壊させる」ことによって構築されます。圏論（カテゴリー論）は、この普遍的な存在論のダイナミクスを、随伴関手（F ⊣ U）や単位・余単位という形で表現した一形態にすぎません。
+            本ツアーでは、最初にこの絶対的なサイクルを最もシンプルで直感的な言葉で体験したのち、後半の部屋で圏論（カテゴリー論）という数学的言語を用いた定式化を見ていきます。
           </p>
         </div>
       )
     },
     {
       id: 2,
-      title: "II. 圏 C：集合の領域",
-      subtitle: "演算を持たない離散的な要素の集まり。",
-      audioText: "第2ステーション、集合の圏Cです。ここでは代数演算や構造を持たない生身の実体のみを観察します。この集合Xには純粋な生成子のみが含まれています。Add Pointをクリックして点（要素）を追加するか、Resetをクリックしてクリアしてください。",
+      title: "II. 自由生成：純粋な構文の誕生",
+      subtitle: "規則を持たず、文字を自由に組み合わせて並べる行為。",
+      audioText: "第2ステーション、自由生成。最もシンプルな言葉で言えば、自由生成とは文字や記号を一切の制限やルールなしに自由に並べる行為です。例えば文字x, y, zがあるとき、それらを組み合わせて並べたすべての文字列、つまり、x、y、xy、xyzなどの単語の集まりを作ることができます。これが純粋な構文です。右側のワークスペースで文字を追加し、生成を実行して自由な文字列を作ってみてください。",
       explanation: (
         <div className="placard-text">
           <p>
-            ここでは<strong>圏 C（集合の圏）</strong>を観察します。この圏のオブジェクトは演算も構造も持ちません。ただの離散的な点の集まりです。
+            最もシンプルな言葉で言えば、<strong>自由生成 (Free Generation)</strong> とは、一切のルールや制限を課さずに、文字や要素を自由に組み合わせて並べる行為です。
           </p>
           <p>
-            この集合を <strong>X</strong> と呼びましょう。現在、X = {'{'} {setElements.map(e => e.label).join(', ')} {'}'} です。
+            例えば、文字の集まり <code>{'{'} {setElements.map(e => e.label).join(', ')} {'}'}</code> があるとき、これらから作られるすべての可能な「文字列」（単語のリスト）を書き出します。
           </p>
           <p>
-            操作パネルで要素を追加したりリセットしたりして、構造のない純粋な数学的素材を体験してください。
+            右側のワークスペースで文字を増やしたり、生成を実行して、 unconstrained（制約のない）な文字列の空間を作ってみてください。
           </p>
         </div>
       )
     },
     {
       id: 3,
-      title: "III. 圏 D：構造の領域",
-      subtitle: "自由モノイドと文字列の結合演算。",
-      audioText: "第3ステーション、モノイドの圏Dです。集合とは異なり、モノイドは二項演算と単位元を含みます。集合Xから自由モノイドF(X)を自由に生成できます。Generate Structureをクリックして自由関手Fを適用し、文字を結合したすべての有限語の集合を生成してください。",
+      title: "III. 商化・崩壊：方程式と評価",
+      subtitle: "文字列をルールに従って積へと折りたたむ行為。",
+      audioText: "第3ステーション、商化・崩壊。自由に生成された無限の文字列は、ルールや方程式を課すことで、より単純な一つの値へと収縮させることができます。例えば、ハイフンで区切られた文字の列を入力し、それを一つに結合するルールを適用すると、文字列全体が一つの積へと崩壊します。これが「商化」あるいは「Collapse」の概念です。右側で文字列を入力し、崩壊させてみましょう。",
       explanation: (
         <div className="placard-text">
           <p>
-            ここから<strong>圏 D（モノイドの圏）</strong>に入ります。モノイドは二項演算（積）と単位元（ε）を持ちます。
+            自由に生成された無限の文字列は、ルールや方程式を課すことで、より単純な一つの値へと収縮させることができます。これを<strong>商化・崩壊 (Quotient Collapse)</strong> と呼びます。
           </p>
           <p>
-            <strong>自由関手 F</strong> (左随伴) は、構造のない集合 <strong>X</strong> から、すべての有限列（単語）の集合である自由モノイド <strong>F(X)</strong> を生成します。
+            例えば、バラバラの文字列を入力し、それらを「結合する（積を求める）」という規則を適用すると、文字列全体が一つの積へと畳み込まれます。
           </p>
           <p>
-            操作ボタンでこの代数的構造を生成したり、<strong>忘却関手 U</strong> (右随伴) を適用して演算を取り除き、再び集合へと崩壊させてみましょう。
+            右側のワークスペースにハイフン区切りの文字を入力して、余分な構文情報が評価されて一つの積へと崩壊する動きを体験してください。
           </p>
         </div>
       )
     },
     {
       id: 4,
-      title: "IV. 随伴の橋渡し (F ⊣ U)",
-      subtitle: "存在論の表現言語としての圏論。",
-      audioText: "第4ステーション、随伴の双対性です。左随伴Fと右随伴Uは、FがUの左随伴であることを示します。これは自由モノイドからのモノイド準同型写像の集合と、生成元の集合からの単なる写像の集合の間に自然な同型が存在することを主張します。準同型を定義することは、生成元をどこに送るかを選ぶことと完全に等価です。",
+      title: "IV. 双対の戯れ：包摂と評価のダイナミクス",
+      subtitle: "要素を埋め込む単位と、式を折りたたむ余単位。",
+      audioText: "第4ステーション、包摂と評価。自由生成と崩壊は、互いに鏡合わせの双対な関係です。要素xをただ一文字の単語へと埋め込む行為ηと、複数の単語の列を掛け合わせて一つの結果へと折りたたむ行為εは、常に連動しています。埋め込みと折りたたみを同時に実行して、その連動を確かめてみましょう。",
       explanation: (
         <div className="placard-text">
           <p>
-            存在論の定式化としての<strong>左随伴と右随伴の対（F ⊣ U）</strong>。
+            自由生成と崩壊は、互いに鏡合わせの<strong>双対な（Dual）関係</strong>にあります。
           </p>
           <p>
-            これは以下の自然同型を確立します：
+            - <strong>包摂（Unit η）</strong>: 生の要素をそのまま一文字の文字列（単語）として式に埋め込む行為。
             <br />
-            <span className="font-mono block text-center py-3 bg-slate-950/60 rounded border border-primary/20 my-3 text-primary text-base shadow-inner">
-              hom(F(X), M) ≅ hom(X, U(M))
-            </span>
+            - <strong>評価（Counit ε）</strong>: 自由に並べられた文字列の羅列を、演算によって実際の値へと折りたたむ（崩壊させる）行為。
           </p>
           <p>
-            これは、自由モノイド <strong>F(X)</strong> から他のモノイドへの構造を保つ「準同型写像」を定義することは、単に生成元 <strong>X</strong> がどこに写るかを決めることと完全に等価であることを意味します。
+            これらは同じコインの裏表であり、すべての数学的関係はこのダイナミクスから生まれます。
           </p>
         </div>
       )
     },
     {
       id: 5,
-      title: "V. 包摂の部屋：単位 (η)",
-      subtitle: "要素を単一単語として埋め込む。",
-      audioText: "第5ステーション、随伴の単位イータです。任意の集合Xに対して、単位は集合Xから自由モノイドの台集合への自然な写像です。各要素xをそれ自身のみからなる単語として埋め込みます。ボタンを押してその埋め込みを実行してください。",
+      title: "V. 定式化：集合とモノイドの圏",
+      subtitle: "存在論を定式化するためのオブジェクトと構造の圏。",
+      audioText: "第5ステーション、定式化。ここから私たちは数学的枠組みとして圏論を導入します。構造のない生の要素の集まりを集合の圏Cとし、二項演算と単位元を持つ代数的構造をモノイドの圏Dと呼びます。自由生成とは集合をモノイドへ移す関手Fであり、崩壊や忘却とはモノイドから演算を忘れて集合へ戻す関手Uです。ボタンを押して、この2つの領域間の変換を実行してください。",
       explanation: (
         <div className="placard-text">
           <p>
-            随伴の<strong>単位 η_X : X → U(F(X))</strong> は、包摂（含み入れ）を表す自然変換です。
+            ここから、この存在論のダイナミクスを数学的に記述するために<strong>圏論 (Category Theory)</strong> を導入します。
           </p>
           <p>
-            集合の各要素 <strong>x ∈ X</strong> を、自由モノイドの要素である一文字の単語 <strong>[x]</strong> へと標準的に対応させます。
+            - <strong>集合の圏 C (Sets)</strong>: 演算を持たない、生の要素 <strong>X</strong> の世界。
+            <br />
+            - <strong>モノイドの圏 D (Monoids)</strong>: 演算（積）と単位元を持つ、構造化された <strong>M</strong> の世界。
           </p>
           <p>
-            単位マッピングを実行し、その対応関係を視覚的に確かめてください。
+            自由生成は集合をモノイドへ移す<strong>自由関手 F</strong> であり、崩壊はモノイドから構造を取り除く<strong>忘却関手 U</strong> です。
           </p>
         </div>
       )
     },
     {
       id: 6,
-      title: "VI. 商化・崩壊の部屋：余単位 (ε)",
-      subtitle: "同値関係の下で構文を積へと折りたたむ。",
-      audioText: "第6ステーション、余単位エプシロンです。これは、自由に生成された構文が評価されて値へと崩壊する商化アクションを表します。モノイドMに対して、余単位は自由に生成されたモノイド要素の列をモノイドの演算を使って実際の積へと畳み込む準同型写像です。",
+      title: "VI. 定式化：随伴 duality (F ⊣ U)",
+      subtitle: "自由生成と崩壊を完璧に統合する自然同型。",
+      audioText: "第6ステーション、随伴の対。FがUの左随伴であることを示すこの定式化は、自由モノイドからのモノイド準同型写像の集合と、元の集合からの写像の集合の間に完全な自然同型が存在することを主張します。これにより、私たちの直感的な「自由生成して崩壊させる」存在論的ループが、圏論という究極の言語によって完璧に証明されます。",
       explanation: (
         <div className="placard-text">
           <p>
-            随伴の<strong>余単位 ε_M : F(U(M)) → M</strong> は、評価または崩壊（商化）を表す自然変換です。
+            私たちの直感的な「自由生成して崩壊させる」存在論的ループは、圏論によって<strong>随伴 (Adjunction)</strong> という形で定式化されます。
           </p>
           <p>
-            自由に生成されたモノイド要素の並び（構文）を、実際のモノイドの乗法を使って一つの要素へと畳み込みます。
+            <strong>F ⊣ U</strong> は、次の自然同型を示します：
+            <br />
+            <span className="font-mono block text-center py-3 bg-slate-950/60 rounded border border-primary/20 my-3 text-primary text-base shadow-inner">
+              hom(F(X), M) ≅ hom(X, U(M))
+            </span>
           </p>
           <p>
-            ハイフンで区切られた列（例：<code>a-b-c</code>）を入力し、余単位による崩壊を実行して、演算が実行される様子を観察してください。
+            これは、自由モノイド上のすべての準同型写像（崩壊のルール）が、元の生の要素 <strong>X</strong> をどこに送るかという単なる写像だけで一意に決定されることを意味します。これが、存在論と数学が完全に一致する瞬間です。
           </p>
         </div>
       )
@@ -339,116 +321,120 @@ export default function AdjunctionVisualizer({ language }: { language: 'en' | 'j
       id: 1,
       title: "I. Gallery Entrance: The Ontological Cycle",
       subtitle: "The absolute nature of mathematical existence.",
-      audioText: "Welcome to the Ontology Museum Tour. At its ultimate foundation, mathematics is the structural cycle of Free Generation and Collapse or Quotienting. Every mathematical system is constructed by first freely generating a syntax or space of elements, and then collapsing it by imposing relations and equations. Category Theory is just a part of this, acting as the formal language that represents this ontological cycle. Today, we explore this reality through the classic example of Sets and Monoids.",
+      audioText: "Welcome to the Ontology Museum Tour. At its ultimate foundation, mathematics is the structural cycle of Free Generation and Collapse or Quotienting. Every mathematical system is constructed by first freely generating a syntax or space of elements, and then collapsing it by imposing relations and equations. In this tour, we will explore this cycle in the simplest intuitive terms first, and cover the category-theoretic formalization later.",
       explanation: (
         <div className="placard-text">
           <p>
-            Welcome to the <strong>Ontology Gallery</strong>. 
+            Welcome to the <strong>Ontology Gallery</strong>.
           </p>
           <p>
             At its ultimate foundation, mathematics <strong>is</strong> the structural cycle of <strong>Free Generation</strong> and <strong>Collapse / Quotienting</strong>.
           </p>
           <p>
-            Every mathematical object is constructed by first freely generating a syntax or space of elements, and then collapsing it by imposing relations, equations, and quotients. Category Theory is just one formal language that models this ontological duality (through adjoint functors F ⊣ U and the unit and counit).
+            In this tour, we will first explore this absolute cycle in the simplest, most intuitive terms. In the later rooms, we will look at how Category Theory acts as the formal mathematical language representing this ontology.
           </p>
         </div>
       )
     },
     {
       id: 2,
-      title: "II. Category C: The Sets Domain",
-      subtitle: "Plain elements without any operations.",
-      audioText: "Stop 2, Category C representing Sets. Here we observe raw entities with no algebraic operations or structural relationships. This set X contains only plain generators. You can click Add Point to populate the set, or Reset to clear it.",
+      title: "II. Free Generation: Pure Syntax",
+      subtitle: "Arranging elements freely without any constraints or equations.",
+      audioText: "Stop 2, Free Generation. In the simplest terms, free generation is the act of taking raw symbols or elements and writing down all possible strings or words you can make from them, without imposing any rules or equations. For example, if you have letters x, y, and z, you generate all combinations like x, y, xy, and xyz. This is pure unconstrained syntax. Try adding points and triggering the generation in the workspace.",
       explanation: (
         <div className="placard-text">
           <p>
-            Here we observe Category <strong>C (Sets)</strong>. Elements in this category have no operations, no structures, and no connections. They are raw, discrete points.
+            In the simplest terms, <strong>Free Generation</strong> is the act of taking raw symbols or elements and writing down all possible strings or words you can make from them, without imposing any rules or equations.
           </p>
           <p>
-            Let's call this set <strong>X</strong>. Currently, X = {'{'} {setElements.map(e => e.label).join(', ')} {'}'}.
+            For example, if you have the set of letters <code>{'{'} {setElements.map(e => e.label).join(', ')} {'}'}</code>, you generate the space of all combinations like <code>x</code>, <code>y</code>, <code>xy</code>, <code>xyz</code>. This is pure, unconstrained syntax.
           </p>
           <p>
-            In the interactive canvas, you can add raw points or reset the set to experience pure unstructured math.
+            Try adding points and triggering the generation on the right to see this syntax space form.
           </p>
         </div>
       )
     },
     {
       id: 3,
-      title: "III. Category D: The Realm of Structure",
-      subtitle: "Free Monoids and string concatenation.",
-      audioText: "Stop 3, Category D representing Monoids. Unlike sets, monoids contain a binary operation and an identity element. We can freely generate a monoid F(X) from our set X. Click Generate Structure to apply the Free Functor F. This creates all possible finite words over our set elements, where the monoid operation is string concatenation.",
+      title: "III. Quotient Collapse: Equations and Semantics",
+      subtitle: "Shrinking sequences of elements into single evaluated products.",
+      audioText: "Stop 3, Quotient Collapse. Once you have freely generated strings, you can collapse or shrink them under equations or multiplication rules. For example, when you take a string of letters separated by hyphens and collapse it, the extra sequence information is evaluated and folded into a single consolidated product. This is quotient collapse. Try entering a hyphenated string on the right and collapsing it.",
       explanation: (
         <div className="placard-text">
           <p>
-            We cross over into Category <strong>D (Monoids)</strong>. Monoids contain a binary operation (multiplication) and an identity element (ε).
+            Once you have freely generated strings, you can collapse or shrink them under equations or multiplication rules. We call this <strong>Quotient Collapse</strong>.
           </p>
           <p>
-            The <strong>Free Functor F</strong> (Left Adjoint) takes our raw set <strong>X</strong> and generates the free monoid <strong>F(X)</strong> containing all finite lists/words.
+            For example, taking a string of letters and applying a "multiplication" or "concatenation" rule folds the sequence into a single evaluated product.
           </p>
           <p>
-            Click the buttons on the workspace to generate this algebraic structure, or collapse it back using the <strong>Forgetful Functor U</strong> (Right Adjoint) to strip the multiplication.
+            Try entering a hyphenated string on the right (e.g. <code>x-y-z</code>) and collapsing it to see how syntax is reduced to semantic values.
           </p>
         </div>
       )
     },
     {
       id: 4,
-      title: "IV. The Formal Adjunction Bridge (F ⊣ U)",
-      subtitle: "Category Theory as a formal language for ontology.",
-      audioText: "Stop 4, The Adjunction Duality. The Left Adjoint F and Right Adjoint U form an adjunction, denoted F adjoint to U. This asserts a natural isomorphism between the set of monoid homomorphisms out of a free monoid, and the set of plain mappings out of its underlying set of generators. Defining a homomorphism is exactly equivalent to choosing where the raw generators go.",
+      title: "IV. The Dual Play: Inclusion & Evaluation",
+      subtitle: "How embedding single elements and folding strings act in tandem.",
+      audioText: "Stop 4, Inclusion and Evaluation. Free generation and collapse are dual mirror images. The inclusion mapping η embeds raw generators into the free string space as singletons, and the evaluation mapping ε collapses sequences of elements into actual values. They are two sides of the same coin.",
       explanation: (
         <div className="placard-text">
           <p>
-            The formalization of our ontology: <strong>F is Left Adjoint to U (F ⊣ U)</strong>.
+            Free generation and collapse are dual mirror images of each other:
           </p>
           <p>
-            This establishes a natural isomorphism:
+            - <strong>Inclusion (Unit η)</strong>: Taking raw elements and embedding them as singleton words in the syntax.
             <br />
-            <span className="font-mono block text-center py-3 bg-slate-950/60 rounded border border-primary/20 my-3 text-primary text-base shadow-inner">
-              hom(F(X), M) ≅ hom(X, U(M))
-            </span>
+            - <strong>Evaluation (Counit ε)</strong>: Collapsing freely generated strings by multiplying them out into actual values.
           </p>
           <p>
-            This means that specifying a structure-preserving monoid homomorphism out of a free monoid <strong>F(X)</strong> is exactly equivalent to choosing where the raw set generators in <strong>X</strong> should map.
+            Every mathematical structure and equation arises from this fundamental play.
           </p>
         </div>
       )
     },
     {
       id: 5,
-      title: "V. Room of Free Inclusion: The Unit (η)",
-      subtitle: "Embedding elements as singletons.",
-      audioText: "Stop 5, The Adjunction Unit, denoted eta. For any set X, the unit is a natural mapping from X to the underlying set of the free monoid. It embeds each raw element x as a singleton word, containing just that element. Click the unit map button to see the injection in action.",
+      title: "V. Formalization: Categories of Sets & Monoids",
+      subtitle: "Representing our ontology with objects and structured categories.",
+      audioText: "Stop 5, Categories of Sets and Monoids. Now we formalize our intuition. We define Category C as the world of Sets containing raw unstructured elements, and Category D as Monoids containing binary multiplication and identity. Free generation is represented as the Free Functor F, and collapse is represented as the Forgetful Functor U which strips monoids back to raw sets. Use the buttons on the right to navigate between these worlds.",
       explanation: (
         <div className="placard-text">
           <p>
-            The Adjunction Unit <strong>η_X : X → U(F(X))</strong> is a natural transformation representing insertion/inclusion.
+            Now we introduce <strong>Category Theory</strong> to formalize this ontological cycle mathematically.
           </p>
           <p>
-            It maps each raw element <strong>x ∈ X</strong> to its singleton word representation <strong>[x]</strong> in the underlying set of the free monoid.
+            - <strong>Category C (Sets)</strong>: The world of plain elements <strong>X</strong> without algebraic structure.
+            <br />
+            - <strong>Category D (Monoids)</strong>: The world of structured monoids <strong>M</strong> with associative multiplication and identity.
           </p>
           <p>
-            Click the Unit mapping visualizer to observe the canonical injection.
+            Free generation is modelled as the <strong>Free Functor F</strong> (Left Adjoint), and collapse is modelled as the <strong>Forgetful Functor U</strong> (Right Adjoint).
           </p>
         </div>
       )
     },
     {
       id: 6,
-      title: "VI. Room of Quotient Collapse: The Counit (ε)",
-      subtitle: "Collapsing syntax under equivalence relations.",
-      audioText: "Stop 6, The Adjunction Counit, denoted epsilon. It represents the quotienting action where freely generated syntax collapses into evaluated values. For any Monoid M, the Counit is a monoid homomorphism that collapses a freely generated word of monoid elements into their actual product in M. Enter a hyphenated word in the evaluator and click collapse to see the product evaluate.",
+      title: "VI. Formalization: The Adjunction Duality (F ⊣ U)",
+      subtitle: "The natural isomorphism uniting generation and quotienting.",
+      audioText: "Stop 6, The Adjunction Duality. The left adjoint F and right adjoint U form an adjunction. This asserts a natural isomorphism, hom(F(X), M) isomorphic to hom(X, U(M)). This means defining structure-preserving maps out of the free monoid is identical to choosing where the raw elements map. The ontology is complete.",
       explanation: (
         <div className="placard-text">
           <p>
-            The Adjunction Counit <strong>ε_M : F(U(M)) → M</strong> is a natural transformation representing evaluation or collapse.
+            The ultimate mathematical formalization of our ontology is the <strong>Adjunction (F ⊣ U)</strong>.
           </p>
           <p>
-            It takes a freely generated word of monoid elements and collapses it into their actual product using the Monoid's binary operation.
+            It establishes a natural isomorphism:
+            <br />
+            <span className="font-mono block text-center py-3 bg-slate-950/60 rounded border border-primary/20 my-3 text-primary text-base shadow-inner">
+              hom(F(X), M) ≅ hom(X, U(M))
+            </span>
           </p>
           <p>
-            Input a hyphenated sequence (e.g. <code>a-b-c</code>) in the evaluator and trigger the Counit collapse to evaluate the product.
+            This states that specifying a homomorphism (collapse rules) out of a free monoid is exactly equivalent to choosing where the raw generators in <strong>X</strong> map. Our intuitive ontological loop is mathematically complete.
           </p>
         </div>
       )
@@ -604,7 +590,7 @@ export default function AdjunctionVisualizer({ language }: { language: 'en' | 'j
             </div>
           )}
 
-          {/* STOP 2: Category C Sets */}
+          {/* STOP 2: Category C Sets (Intuitive Free Generation) */}
           {currentStop === 2 && (
             <div className="animate-pop-in" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between', height: '100%', width: '100%' }}>
               <div>
@@ -639,51 +625,120 @@ export default function AdjunctionVisualizer({ language }: { language: 'en' | 'j
               </div>
               
               <div className="workspace-footer">
-                <span>{language === 'en' ? 'Populate the set and proceed to the Monoid gallery room.' : '集合要素を設定し、モノイド展示室へと進んでください。'}</span>
-                <button onClick={nextStop} className="btn btn-secondary">
-                  {language === 'en' ? 'Go to Monoids' : 'モノイドへ'} <ChevronRight size={10} />
+                <span>{language === 'en' ? 'Populate the set and click next to generate structure.' : '集合要素を設定し、次の室に進んで構造を生成してください。'}</span>
+                <button onClick={nextStop} className="btn btn-primary">
+                  {language === 'en' ? 'Go to Generation' : '生成室へ'} <ChevronRight size={10} />
                 </button>
               </div>
             </div>
           )}
 
-          {/* STOP 3: Category D Monoids */}
+          {/* STOP 3: Pure Quotient Collapse (Folding words) */}
           {currentStop === 3 && (
             <div className="animate-pop-in" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between', height: '100%', width: '100%' }}>
               <div>
                 <h4 className="workspace-title" style={{ marginBottom: '1.5rem' }}>
-                  {language === 'en' ? 'Free Monoid F(X) Workspace' : '自由モノイド F(X) ワークスペース'}
+                  {language === 'en' ? 'Quotient Collapse' : '商化・崩壊'}
+                </h4>
+                <p className="placard-text" style={{ fontSize: '0.8rem', marginBottom: '1rem' }}>
+                  {language === 'en'
+                    ? 'Enter a string of symbols separated by hyphens (e.g. x-y-z) and collapse them under multiplication rules:'
+                    : 'ハイフンで区切られた記号の列を入力し、乗法ルールに従って畳み込み崩壊させてください：'
+                  }
+                </p>
+                <form onSubmit={handleCounitCollapse} className="counit-form">
+                  <input
+                    type="text"
+                    value={counitInput}
+                    onChange={e => setCounitInput(e.target.value)}
+                    placeholder="x-y-z"
+                    className="input-text"
+                    required
+                  />
+                  <button type="submit" className="btn btn-primary">
+                    {language === 'en' ? 'Collapse' : '崩壊させる'}
+                  </button>
+                </form>
+
+                <div className="workspace-canvas" style={{ minHeight: '120px' }}>
+                  {animationState === 'counit' && (
+                    <div className="counit-result-box" style={{ width: '100%', border: 'none', background: 'transparent', minHeight: 'auto' }}>
+                      {counitResult ? (
+                        <span className="counit-val-result flex items-center gap-1.5" style={{ color: 'var(--success)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                          <CheckCircle2 size={16} /> {language === 'en' ? 'Product:' : '積の結果:'} <span className="font-mono text-secondary ml-2 text-base">{counitResult}</span>
+                        </span>
+                      ) : (
+                        <span className="counit-loading-text">
+                          {language === 'en' ? 'FOLDING SYNTAX...' : '構文の折りたたみ・商化中...'}
+                        </span>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* STOP 4: The Dual Play */}
+          {currentStop === 4 && (
+            <div className="animate-pop-in" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between', height: '100%', width: '100%' }}>
+              <div>
+                <h4 className="workspace-title" style={{ marginBottom: '1rem' }}>
+                  {language === 'en' ? 'Dual Play: Inclusion & Evaluation' : '双対の戯れ：包摂と評価'}
+                </h4>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
+                  <button onClick={triggerUnitMap} disabled={setElements.length === 0} className="btn btn-primary text-[9px]">
+                    {language === 'en' ? '1. Trigger η_X' : '1. 包摂 (η_X) を実行'}
+                  </button>
+                  <button onClick={triggerCounitCollapse} className="btn btn-secondary text-[9px]">
+                    {language === 'en' ? '2. Trigger ε_M' : '2. 評価 (ε_M) を実行'}
+                  </button>
+                </div>
+
+                <div className="unit-list" style={{ maxHeight: '140px' }}>
+                  {setElements.map(e => (
+                    <div key={e.id} className="unit-row">
+                      <span className="unit-val-src">{e.label}</span>
+                      <ArrowRight size={12} className="text-text-muted" />
+                      <span className="unit-val-target">
+                        {animationState === 'unit' ? `[${e.label}]` : '?'}
+                      </span>
+                      <span className="unit-val-desc" style={{ fontSize: '9px' }}>
+                        {animationState === 'unit' 
+                          ? (language === 'en' ? 'singleton (η)' : '単一単語 (η)') 
+                          : (language === 'en' ? 'raw element' : '生の要素')
+                        }
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* STOP 5: Categories of Sets and Monoids */}
+          {currentStop === 5 && (
+            <div className="animate-pop-in" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between', height: '100%', width: '100%' }}>
+              <div>
+                <h4 className="workspace-title" style={{ marginBottom: '1rem' }}>
+                  {language === 'en' ? 'Mapping between Categories C and D' : '圏 C と 圏 D の間の写像'}
                 </h4>
                 
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', marginBottom: '1.5rem' }}>
-                  <button
-                    onClick={triggerFreeGeneration}
-                    disabled={setElements.length === 0}
-                    className="btn btn-primary"
-                  >
-                    {language === 'en' ? 'Apply Free Functor (F)' : '自由関手 (F) を適用'} <Sparkles size={12} />
+                  <button onClick={triggerFreeGeneration} disabled={setElements.length === 0} className="btn btn-primary">
+                    {language === 'en' ? 'Apply Functor F' : '関手 F を適用'}
                   </button>
-                  <button
-                    onClick={triggerForgetfulCollapse}
-                    disabled={monoidWords.length === 0}
-                    className="btn btn-secondary"
-                  >
-                    {language === 'en' ? 'Apply Forgetful (U)' : '忘却関手 (U) を適用'} <LogOut size={12} />
+                  <button onClick={triggerForgetfulCollapse} disabled={monoidWords.length === 0} className="btn btn-secondary">
+                    {language === 'en' ? 'Apply Functor U' : '関手 U を適用'}
                   </button>
                 </div>
 
                 <div className="workspace-canvas">
-                  {animationState === 'free' && monoidWords.length === 0 && (
-                    <div className="animate-spin" style={{ color: 'var(--primary)' }}>
-                      <RefreshCw size={20} />
-                    </div>
-                  )}
-                  {monoidWords.length === 0 && animationState !== 'free' && (
+                  {monoidWords.length === 0 ? (
                     <span className="empty-state">
-                      {language === 'en' ? 'Structure collapsed. Apply F to generate monoids.' : '構造が崩壊しました。Fを適用してモノイドを生成してください。'}
+                      {language === 'en' ? 'No structure. Categories disconnected.' : '構造なし。圏の接続は切断されています。'}
                     </span>
-                  )}
-                  {monoidWords.length > 0 && (
+                  ) : (
                     <div className="monoid-words-grid">
                       {monoidWords.map((word, idx) => (
                         <div key={idx} className="monoid-item floating-node">
@@ -697,8 +752,8 @@ export default function AdjunctionVisualizer({ language }: { language: 'en' | 'j
             </div>
           )}
 
-          {/* STOP 4: Adjunction Bridge */}
-          {currentStop === 4 && (
+          {/* STOP 6: Adjunction Duality (F ⊣ U) */}
+          {currentStop === 6 && (
             <div className="animate-pop-in text-center">
               <div className="bridge-box">
                 <div className="bridge-term primary">hom(F(X), M)</div>
@@ -712,93 +767,6 @@ export default function AdjunctionVisualizer({ language }: { language: 'en' | 'j
                   : '自由モノイドの普遍的性質。構造を持たない集合の要素から他のモノイドへの写像を定義すると、それは自動的かつ一意に自由モノイドからの構造保存準同型写像を誘起します。'
                 }
               </p>
-            </div>
-          )}
-
-          {/* STOP 5: Unit η */}
-          {currentStop === 5 && (
-            <div className="animate-pop-in" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between', height: '100%', width: '100%' }}>
-              <div>
-                <h4 className="workspace-title" style={{ marginBottom: '1.5rem' }}>
-                  {language === 'en' ? 'Unit Mapping (η_X) Simulation' : '単位マッピング (η_X) シミュレーション'}
-                </h4>
-                <p className="placard-text" style={{ fontSize: '0.8rem', marginBottom: '1rem' }}>
-                  {language === 'en'
-                    ? 'Click below to inject the Set generators into the free monoid as singleton words:'
-                    : '集合の生成元を、自由モノイド内の一文字の単語（単一単語）として包摂・埋め込みます：'
-                  }
-                </p>
-                <button
-                  onClick={triggerUnitMap}
-                  disabled={setElements.length === 0}
-                  className="btn btn-primary"
-                  style={{ width: '100%', marginBottom: '1.5rem' }}
-                >
-                  {language === 'en' ? 'Trigger η_X Mapping' : '単位射 (η_X) を実行'}
-                </button>
-
-                <div className="unit-list">
-                  {setElements.map(e => (
-                    <div key={e.id} className="unit-row">
-                      <span className="unit-val-src">{e.label}</span>
-                      <ArrowRight size={12} className="text-text-muted" />
-                      <span className="unit-val-target">
-                        {animationState === 'unit' ? `[${e.label}]` : '?'}
-                      </span>
-                      <span className="unit-val-desc">
-                        {animationState === 'unit' 
-                          ? (language === 'en' ? 'singleton word' : '単一単語') 
-                          : (language === 'en' ? 'awaiting mapping' : 'マッピング待機中')
-                        }
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* STOP 6: Counit ε */}
-          {currentStop === 6 && (
-            <div className="animate-pop-in" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between', height: '100%', width: '100%' }}>
-              <div>
-                <h4 className="workspace-title" style={{ marginBottom: '1.5rem' }}>
-                  {language === 'en' ? 'Quotient Collapse (ε_M)' : '商化・崩壊 (ε_M)'}
-                </h4>
-                <p className="placard-text" style={{ fontSize: '0.8rem', marginBottom: '1rem' }}>
-                  {language === 'en'
-                    ? 'Enter a string of monoid elements separated by hyphens and click to collapse/evaluate their binary product:'
-                    : 'ハイフンで区切られた自由モノイド要素の列を入力し、実際の演算（乗法）によって積へと畳み込みます：'
-                  }
-                </p>
-                <form onSubmit={handleCounitCollapse} className="counit-form">
-                  <input
-                    type="text"
-                    value={counitInput}
-                    onChange={e => setCounitInput(e.target.value)}
-                    placeholder="x-y-z"
-                    className="input-text"
-                    required
-                  />
-                  <button type="submit" className="btn btn-primary">
-                    {language === 'en' ? 'Collapse (ε_M)' : '崩壊させる'}
-                  </button>
-                </form>
-
-                {animationState === 'counit' && (
-                  <div className="counit-result-box">
-                    {counitResult ? (
-                      <span className="counit-val-result flex items-center gap-1.5" style={{ color: 'var(--success)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                        <CheckCircle2 size={16} /> {language === 'en' ? 'Evaluation Product:' : '積の計算結果:'} <span className="font-mono text-secondary ml-2 text-base">{counitResult}</span>
-                      </span>
-                    ) : (
-                      <span className="counit-loading-text">
-                        {language === 'en' ? 'FOLDING SYNTAX TREES...' : '構文関係の畳み込み・商化中...'}
-                      </span>
-                    )}
-                  </div>
-                )}
-              </div>
             </div>
           )}
 

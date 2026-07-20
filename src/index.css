@@ -414,6 +414,25 @@ body {
   border: 1px solid rgba(212, 175, 55, 0.25);
 }
 
+/* Word Highlights for Live Teleprompter */
+.word-highlight {
+  background-color: rgba(212, 175, 55, 0.25);
+  color: #ffffff;
+  text-shadow: 0 0 10px rgba(212, 175, 55, 0.6);
+  border-radius: 4px;
+  padding: 0px 4px;
+  margin: 0px -2px;
+  transition: all 0.12s ease-out;
+  display: inline-block;
+  transform: scale(1.04);
+}
+
+.word-normal {
+  transition: all 0.2s ease;
+  display: inline-block;
+  color: var(--text-muted);
+}
+
 /* Dynamic Exhibits Workspaces */
 .workspace-title-bar {
   display: flex;

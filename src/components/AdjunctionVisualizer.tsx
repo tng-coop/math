@@ -46,14 +46,44 @@ export default function AdjunctionVisualizer({ language }: { language: 'en' | 'j
       const filteredVoices = allVoices.filter(v => v.lang.startsWith(langPrefix));
       setVoices(filteredVoices);
 
-      // Auto-select the best available voice
-      const premiumKeywords = language === 'ja'
-        ? ['google', 'natural', 'neural', 'online', 'sayaka', 'haruka']
-        : ['google', 'natural', 'neural', 'online', 'aria', 'guy'];
+      // Auto-select the best available voice with prioritization
+      const scoredVoices = filteredVoices.map(v => {
+        let score = 0;
+        const nameLower = v.name.toLowerCase();
+        const langLower = v.lang.toLowerCase();
 
-      const bestVoice = filteredVoices.find(v => 
-        premiumKeywords.some(keyword => v.name.toLowerCase().includes(keyword))
-      ) || filteredVoices[0];
+        if (language === 'en') {
+          // Prioritize United States English
+          if (langLower.includes('en-us') || langLower.includes('en_us')) {
+            score += 100;
+          }
+          // Prioritize neural / high quality online voices
+          if (nameLower.includes('natural') || nameLower.includes('neural') || nameLower.includes('online')) {
+            score += 50;
+          }
+          // Prioritize Google / Microsoft premium voices
+          if (nameLower.includes('google') || nameLower.includes('microsoft') || nameLower.includes('apple')) {
+            score += 30;
+          }
+          // Prioritize specific premium US voices
+          if (nameLower.includes('aria') || nameLower.includes('guy') || nameLower.includes('samantha') || nameLower.includes('female') || nameLower.includes('male') || nameLower.includes('man') || nameLower.includes('woman')) {
+            score += 20;
+          }
+        } else {
+          // Prioritize Japanese premium voices
+          if (nameLower.includes('google') || nameLower.includes('natural') || nameLower.includes('neural') || nameLower.includes('online')) {
+            score += 50;
+          }
+          if (nameLower.includes('sayaka') || nameLower.includes('haruka') || nameLower.includes('ichiro')) {
+            score += 20;
+          }
+        }
+        return { voice: v, score };
+      });
+
+      // Sort descending by score
+      scoredVoices.sort((a, b) => b.score - a.score);
+      const bestVoice = scoredVoices[0]?.voice || filteredVoices[0];
 
       if (bestVoice) {
         setSelectedVoiceName(bestVoice.name);

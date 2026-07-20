@@ -20,4 +20,9 @@ When expanding the museum or describing mathematical concepts, always connect th
 When creating or modifying museum rooms, you must:
 1. **Ensure Dual Exposure**: Every exhibit must present both the **Generators (Syntax)** and the **Relations (Quotient Collapse)**. Do not explain one without the other.
 2. **Highlight Historical & Archaeological Anchors**: Always ground the concepts in early human technologies (e.g., Sumerian bullae, Inca quipus, warp-weft textile patterns, Paris railway stations) to emphasize math as an evolutionary cognitive organ.
-3. **Bilingual Rigor**: Keep both English (EN) and Japanese (JA) placards fully detailed, avoiding hand-waving simplifications in either language.
+3. **Bilingual Rigor & Academic Standards**: Keep both English (EN) and Japanese (JA) placards fully detailed, avoiding hand-waving simplifications. All mathematical terminology, definitions, and equations must meet the rigorous standards of top US graduate math departments (e.g., MIT, Princeton, Harvard).
+
+## 4. Academic Rigor Standards (US Top-Tier Graduate Level)
+* **Universal Properties**: Always formulate limits, colimits, quotients, and adjunctions through their universal properties, hom-sets, and natural transformations.
+* **Algebraic and Topological Accuracy**: Do not use simplified descriptions for manifolds, equivalence relations, or algebraic structures. State all variables, domains, codomains, and naturality conditions explicitly.
+* **LaTeX Formatting**: Render all expressions using correct LaTeX mathematical modes, utilizing standard category-theoretic notation (e.g., $\cong$ for isomorphic structures, $\text{Hom}$ for hom-sets, $\dashv$ for adjunctions).

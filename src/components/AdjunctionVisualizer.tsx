@@ -31,6 +31,33 @@ export default function AdjunctionVisualizer() {
 
   // Text-to-Speech (TTS) state
   const [activeSpeechText, setActiveSpeechText] = useState<string | null>(null);
+  const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
+  const [selectedVoiceName, setSelectedVoiceName] = useState<string>('');
+
+  // Load voices dynamically (handles async voice loading in Chrome/Edge)
+  useEffect(() => {
+    if (!('speechSynthesis' in window)) return;
+
+    const loadVoices = () => {
+      const allVoices = window.speechSynthesis.getVoices();
+      // Filter for English voices
+      const englishVoices = allVoices.filter(v => v.lang.startsWith('en'));
+      setVoices(englishVoices);
+
+      // Auto-select the best available premium/natural voice
+      const premiumKeywords = ['google', 'natural', 'neural', 'online', 'aria', 'guy'];
+      const bestVoice = englishVoices.find(v => 
+        premiumKeywords.some(keyword => v.name.toLowerCase().includes(keyword))
+      ) || englishVoices[0];
+
+      if (bestVoice) {
+        setSelectedVoiceName(bestVoice.name);
+      }
+    };
+
+    loadVoices();
+    window.speechSynthesis.onvoiceschanged = loadVoices;
+  }, []);
 
   // Stop speech when component unmounts or stop changes
   useEffect(() => {
@@ -57,6 +84,17 @@ export default function AdjunctionVisualizer() {
         window.speechSynthesis.cancel(); // Stop current speech
         const cleanText = text.replace(/[\$\{\}\[\]\(\)⊣→≅↦]/g, ' '); // Clean mathematical symbols for TTS
         const utterance = new SpeechSynthesisUtterance(cleanText);
+        
+        // Apply selected voice
+        const voice = voices.find(v => v.name === selectedVoiceName);
+        if (voice) {
+          utterance.voice = voice;
+        }
+
+        // Professional museum docent cadence
+        utterance.rate = 0.92; // Slightly slower for clarity and premium feel
+        utterance.pitch = 1.0;
+
         utterance.onend = () => setActiveSpeechText(null);
         utterance.onerror = () => setActiveSpeechText(null);
         window.speechSynthesis.speak(utterance);
@@ -262,8 +300,6 @@ export default function AdjunctionVisualizer() {
     }
   ];
 
-  const currentTourStop = tourStops[currentStop - 1];
-
   const nextStop = () => {
     if (currentStop < tourStops.length) {
       setCurrentStop(currentStop + 1);
@@ -275,6 +311,8 @@ export default function AdjunctionVisualizer() {
       setCurrentStop(currentStop - 1);
     }
   };
+
+  const currentTourStop = tourStops[currentStop - 1];
 
   const isSpeaking = activeSpeechText === currentTourStop.audioText;
 
@@ -295,8 +333,33 @@ export default function AdjunctionVisualizer() {
           </div>
         </div>
 
-        {/* Audio controls with Animated Waveform */}
+        {/* Dynamic Voice Selection & Playback Controls */}
         <div className="audio-controls-group">
+          {voices.length > 0 && (
+            <select
+              value={selectedVoiceName}
+              onChange={(e) => setSelectedVoiceName(e.target.value)}
+              className="input-text"
+              style={{ 
+                width: '140px', 
+                fontSize: '0.65rem', 
+                padding: '4px 8px', 
+                height: '24px', 
+                background: 'rgba(0,0,0,0.5)',
+                border: '1px solid rgba(212,175,55,0.3)',
+                color: 'var(--primary)',
+                cursor: 'pointer',
+                borderRadius: '6px'
+              }}
+            >
+              {voices.map((v, i) => (
+                <option key={i} value={v.name} style={{ background: '#0b0f19', color: '#fff' }}>
+                  {v.name.replace('Microsoft', 'MS').replace('Google', 'G')}
+                </option>
+              ))}
+            </select>
+          )}
+
           <div className="audio-wave">
             <div className={`wave-bar ${isSpeaking ? 'active' : ''}`} />
             <div className={`wave-bar ${isSpeaking ? 'active' : ''}`} />
@@ -308,10 +371,10 @@ export default function AdjunctionVisualizer() {
           <button
             onClick={() => speakCurrentStop(currentTourStop.audioText)}
             className={`btn ${isSpeaking ? 'btn-secondary' : 'btn-primary'}`}
-            style={isSpeaking ? { backgroundColor: 'var(--error)', color: 'white', borderColor: 'var(--error)' } : {}}
+            style={isSpeaking ? { backgroundColor: 'var(--error)', color: 'white', borderColor: 'var(--error)', padding: '4px 12px', height: '24px' } : { padding: '4px 12px', height: '24px' }}
           >
-            {isSpeaking ? <VolumeX size={12} /> : <Volume2 size={12} />}
-            {isSpeaking ? 'Stop Audio' : 'Play Audio'}
+            {isSpeaking ? <VolumeX size={10} /> : <Volume2 size={10} />}
+            {isSpeaking ? 'Stop' : 'Play'}
           </button>
         </div>
 

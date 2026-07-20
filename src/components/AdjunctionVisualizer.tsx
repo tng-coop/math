@@ -22,6 +22,7 @@ interface SpokenWord {
   start: number;
   end: number;
 }
+
 let activeUtteranceRef: SpeechSynthesisUtterance | null = null;
 
 export default function AdjunctionVisualizer({ language }: { language: 'en' | 'ja' }) {
@@ -47,6 +48,7 @@ export default function AdjunctionVisualizer({ language }: { language: 'en' | 'j
       }
     }
   }, [currentStop]);
+
   const [setElements, setSetElements] = useState<ElementNode[]>([
     { id: '1', label: 'I' },
     { id: '2', label: 'I' },
@@ -154,7 +156,6 @@ export default function AdjunctionVisualizer({ language }: { language: 'en' | 'j
       window.speechSynthesis.cancel();
     }
     if (activeUtteranceRef) {
-      // Read to satisfy TS compiler check and release reference
       activeUtteranceRef = null;
     }
     setActiveSpeechText(null);
@@ -219,7 +220,6 @@ export default function AdjunctionVisualizer({ language }: { language: 'en' | 'j
     if (!('speechSynthesis' in window)) return;
 
     if (activeSpeechText === text) {
-      // Toggle play / pause state
       if (isPaused) {
         window.speechSynthesis.resume();
         setIsPaused(false);
@@ -246,7 +246,7 @@ export default function AdjunctionVisualizer({ language }: { language: 'en' | 'j
       if (currentWordIdx === -1) currentWordIdx = words.length - 1;
     }
 
-    const wordSkip = 4; // Word seek step size
+    const wordSkip = 4;
     let targetWordIdx = direction === 'fwd' 
       ? Math.min(words.length - 1, currentWordIdx + wordSkip) 
       : Math.max(0, currentWordIdx - wordSkip);
@@ -254,7 +254,6 @@ export default function AdjunctionVisualizer({ language }: { language: 'en' | 'j
     const targetWord = words[targetWordIdx];
     startSpeech(activeSpeechText, targetWord.start);
   };
-
 
   const addElement = () => {
     const labels = currentStop === 2 
@@ -402,74 +401,80 @@ export default function AdjunctionVisualizer({ language }: { language: 'en' | 'j
     return result;
   };
 
-  // Tour stops definitions
+  const nextStop = () => {
+    if (currentStop < tourStops.length) {
+      setCurrentStop(currentStop + 1);
+    }
+  };
+
+  // Tour stops definitions (Gradual, rigorous buildup of Free Generation & Quotients)
   const tourStops: TourStop[] = language === 'ja' ? [
     {
       id: 1,
       title: "I. 美術館入口：存在論的サイクル",
-      subtitle: "数学的実体の絶対的なあり方について。",
-      text: "随伴存在論ツアーへようこそ。数学はその究極の基盤において、自由生成と、崩壊ないし商化の構造的サイクルその事です。この二重性は、現代の高度な抽象概念ではなく、実のところ百万年前の人類が認知能力を獲得した黎明期から、脳の中で常に機能し続けてきた仕組みです。本ツアーでは、最初にこのサイクルを最も直感的な言葉で体験し、最後に圏論を使った数学的定式化を学びます。"
+      subtitle: "人類が記法と意味論を通じて存在を発見した物語。",
+      text: "随伴存在論ツアーへようこそ。数学はその究極の基盤において、自由生成と商化という２つの認知の対話的サイクルそのものです。私たちは最初に文字や記号を一切の制約なしに並べて「構文（Syntax）」を作り出し、次にそれらを方程式によって特定の価値へと折りたたむことで「意味論（Semantics）」を与えます。この一見単純なプロセスこそがすべての数学的構造の起源です。本ツアーでは、骨の刻み目から言語の文法、そして圏論へとこの二重性を段階的に追っていきます。"
     },
     {
       id: 2,
       title: "II. 数え上げの黎明：石ころと刻み目 (百万年前)",
       subtitle: "無制限に刻み目を打つ「自由生成」と、個数へ折りたたむ「商化」。",
-      text: "百万年前、私たちの祖先は小石を集めたり、骨に刻み目を刻み始めました。ノッチを無数に刻んでいく行為は、一切のルールや制限を持たない自由生成であり、純粋な構文の誕生を表します。これに対し、バラバラの刻み目たちを、例えば5頭の獲物のように一つの概念や数字へと折りたたみ、共通の価値に還元する行為が、商化ないし崩壊です。"
+      text: "百万年前、私たちの祖先は骨に刻み目（ノッチ）を刻み始めました。追加のルールを持たずに、刻み目 I を I, II, III と無数に刻み続ける行為は、純粋な記号構文の「自由生成」です。しかし、バラバラの刻み目そのものは役に立ちません。これを「5頭の獲物」という単一の数概念へと折りたたむ行為、これこそが「商化」です。バラバラな表記を同値関係でまとめ上げることで、私たちは数を把握したのです。"
     },
     {
       id: 3,
       title: "III. 言語の誕生：アルファベットと意味論 (古代)",
-      subtitle: "アルファベットから無限の文を生成し、共通概念へと崩壊させる。",
-      text: "古代、人類は少数の文字から無限の文や単語を生成する能力を獲得しました。限られた記号を並べて無数の文字列を作る行為は自由生成です。そして、異なる文字の並びや表現を、共通の意味という一つの概念に折りたたむ行為が商化です。異なる構文が意味という一つの積へと崩壊する。これこそが言語の意味論の正体です。"
+      subtitle: "アルファベットから無限の文を生成し、共通概念へと商化させる。",
+      text: "文字を手に入れた人類は、少数の記号から無限の言葉や文を紡ぎ出す能力を獲得しました。ルールを無視してアルファベットを自由に並べる行為は、無制限な記号空間の「自由生成」です。しかし、綴りや言い回しが異なっていても、伝わる核心的なイメージは一つに収縮します。私たちは異なる表現を「同義」としてグループ化（商化）することで、言語に共通の意味論を与えたのです。"
     },
     {
       id: 4,
       title: "IV. アルゴリズムの時代：構文木とコンパイル (現代)",
       subtitle: "コード構文を生成し、コンピューターで評価して値へ崩壊させる。",
-      text: "現代のコンピューター科学においても、このサイクルは不変です。変数や演算子からプログラムの抽象構文木を自由に生成し、コンパイラやプロセッサが二項演算に沿って構文木を評価して、最終的な出力値へと収縮させます。包摂イータは変数を割り当てることであり、評価エプシロンはコードを実行することに他なりません。"
+      text: "現代のコンピューターサイエンスも、このサイクルを共有しています。コードを書く際、私たちは変数や演算子を自由に並べて「抽象構文木（AST）」を生成します。そしてコンパイラやCPUが二項演算に従って式を再帰的に評価し、最終的な出力値へと「崩壊（Quotient Collapse）」させます。コードの記述が自由生成であり、その実行が商化による値の導出に他なりません。"
     },
     {
       id: 5,
       title: "V. 定式化：集合とモノイドの圏",
-      subtitle: "人類の認知の往復を、数学的なオブジェクトの接続として記述する。",
-      text: "この百万年の知性の往復を、圏論を用いて正式に定義します。生の要素の領域を集合の圏Cとし、結合規則を持つ体系をモノイドの圏Dと呼びます。自由生成は集合をモノイドにする自由関手Fであり、崩壊は構造を忘れて集合へと戻す忘却関手Uです。これらは２つの圏の間の変換です。"
+      subtitle: "認知の往復を、数学的なオブジェクトの接続として記述する。",
+      text: "この知性の往復を、圏論を用いて正式に定義します。構造を持たない生の記号の世界を「集合の圏C」とし、結合ルールを持つ体系を「モノイドの圏D」と呼びます。集合から自由な文字列を作る操作は「自由関手F」であり、モノイドから演算構造を無視して生の文字列に戻す操作は「忘却関手U」です。これらは２つの世界の架け橋です。"
     },
     {
       id: 6,
       title: "VI. 定式化：随伴 duality (F ⊣ U)",
       subtitle: "自由生成と商化崩壊を完璧に統合する自然同型。",
-      text: "私たちの直感的な「自由生成して崩壊させる」存在論的ループは、圏論によって随伴（F ⊣ U）という形で統合されます。これは自然同型を確立します。この式は、自由モノイド上のすべての準同型写像（崩壊のルール）が、元の生の要素をどこに送るかという最初の写像だけで一意に決定されることを意味します。知性の歩みが数学的に証明される瞬間です。"
+      text: "自由生成と商化のループは、圏論において「随伴（F ⊣ U）」として統合されます。これは、自由モノイド上のすべての準同型写像（崩壊のルール）が、元の生の要素をどこに送るかという最初の写像だけで一意に決定されることを意味します。百万年前に小石を数え始めた人類の思考の必然が、数学の最も美しい随伴の橋によって証明されるのです。"
     }
   ] : [
     {
       id: 1,
       title: "I. Gallery Entrance: The Ontological Cycle",
       subtitle: "The absolute nature of mathematical existence.",
-      text: "Welcome to the Ontology Museum Tour. At its ultimate foundation, mathematics is the structural cycle of Free Generation and Collapse or Quotienting. Every mathematical system is constructed by first freely generating a syntax or space of elements, and then collapsing it by imposing relations and equations. In this tour, we will explore this cycle in the simplest intuitive terms first, and cover the category-theoretic formalization later."
+      text: "Welcome to the Ontology Museum Tour. At its ultimate foundation, mathematics is the dialogical cycle of Free Generation and Quotienting. Every mathematical system is constructed by first freely generating a syntax or space of elements, and then collapsing it by imposing relations and equations to resolve semantics. In this tour, we will explore this duality step-by-step, starting from bone notches and language grammar, to formal Category Theory."
     },
     {
       id: 2,
       title: "II. The Dawn of Counting: Pebbles and Notches (1M Years Ago)",
       subtitle: "Generating notches freely and collapsing them into numeric quantities.",
-      text: "A million years ago, our ancestors collected pebbles or carved notches on bones to record quantities. Carving notches freely onto a bone with no constraints is the free generation of pure syntax. Conversely, folding those discrete marks into a single numeric value, such as 5 mammoths, to trade, compare, or share is the quotient collapse. This is the origin of arithmetic."
+      text: "A million years ago, our ancestors carved notches on bones to record quantity. Carving notches I, II, III freely with no rules is the free generation of pure syntax. However, raw notches are useless on their own. Folding those discrete marks into a single numeric concept, such as 5, to trade, compare, or share is the quotient collapse. By grouping syntactic marks under bijection, we discovered numbers."
     },
     {
       id: 3,
       title: "III. The Birth of Language: Alphabet & Semantics (Ancient Eras)",
       subtitle: "Generating infinite strings of text and collapsing them into shared meaning.",
-      text: "In ancient eras, humanity created alphabets to generate infinite sentences and text configurations. Arranging a small set of letters to write down infinite sentences represents the free generation of syntax. Quotient collapse is the mechanism of semantics, where multiple syntactic formulations or synonyms collapse under a single, shared definition or meaning."
+      text: "With alphabets, humanity gained the ability to generate infinite sentences. Arranging letters freely to write down expressions represents the free generation of syntax. Quotienting is the mechanism of semantics, where multiple different syntactic formulations or synonyms collapse under a single equivalence class representing a shared definition or meaning."
     },
     {
       id: 4,
       title: "IV. The Algorithmic Era: Syntax Trees & Evaluation (Modern)",
       subtitle: "Generating abstract syntax trees and collapsing them into values.",
-      text: "Modern computer science follows the exact same cognitive cycle. We freely assemble variables and operators into nested Abstract Syntax Trees. The CPU or compiler then collapses this tree using binary operations, reducing it into a single computed output value. Inclusion eta allocates variables, and evaluation epsilon executes the code."
+      text: "Modern computer science follows the exact same cognitive cycle. We freely assemble variables and operators into nested Abstract Syntax Trees (Syntax). The CPU or compiler then collapses this tree using binary operations, reducing it into a single computed output value (Evaluation). Writing code is free generation, while executing it is quotient collapse."
     },
     {
       id: 5,
       title: "V. Formalization: Categories of Sets & Monoids",
       subtitle: "Representing our cognitive cycle with objects and structured categories.",
-      text: "We now introduce Category Theory to formalize this cognitive loop mathematically. Category C of Sets represents the world of raw elements without structure. Category D of Monoids represents structured objects with associative multiplication. Free generation is modelled as the Free Functor F, and collapse is modelled as the Forgetful Functor U."
+      text: "We now introduce Category Theory to formalize this cognitive loop mathematically. Category C of Sets represents the world of raw elements (notches, variables) without structure. Category D of Monoids represents structured objects with associative multiplication. Free generation is represented as the Free Functor F, and collapse is represented as the Forgetful Functor U."
     },
     {
       id: 6,
@@ -478,13 +483,6 @@ export default function AdjunctionVisualizer({ language }: { language: 'en' | 'j
       text: "The ultimate mathematical formalization of our ontology is the Adjunction. It establishes a natural isomorphism between hom-sets. This states that specifying a collapsed evaluation map out of a free structure is identical to choosing where the raw generators map. The cognitive circle that began with notch-carving a million years ago is mathematically unified."
     }
   ];
-
-  const nextStop = () => {
-    if (currentStop < tourStops.length) {
-      setCurrentStop(currentStop + 1);
-    }
-  };
-
 
   const currentTourStop = tourStops[currentStop - 1];
 

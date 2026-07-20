@@ -128,6 +128,22 @@ body {
     inset 0 1px 0 rgba(255, 255, 255, 0.03);
 }
 
+/* Custom Scrollbar for Placard Panel */
+.placard-panel::-webkit-scrollbar {
+  width: 6px;
+}
+.placard-panel::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 3px;
+}
+.placard-panel::-webkit-scrollbar-thumb {
+  background: rgba(212, 175, 55, 0.12);
+  border-radius: 3px;
+}
+.placard-panel::-webkit-scrollbar-thumb:hover {
+  background: rgba(212, 175, 55, 0.3);
+}
+
 .placard-header {
   display: flex;
   align-items: center;
@@ -459,6 +475,15 @@ body {
   box-shadow: 
     0 10px 25px rgba(214, 175, 55, 0.15),
     inset 0 1px 4px rgba(255, 255, 255, 0.05);
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.set-element:hover {
+  transform: scale(1.18) translateY(-4px);
+  border-color: #ffffff;
+  color: #ffffff;
+  box-shadow: 0 15px 30px rgba(214, 175, 55, 0.35);
+  cursor: pointer;
 }
 
 .monoid-words-grid {
@@ -477,6 +502,14 @@ body {
   font-family: 'Inter', sans-serif;
   color: var(--secondary);
   box-shadow: 0 4px 12px rgba(56, 189, 248, 0.06);
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.monoid-item:hover {
+  transform: translateY(-2px) scale(1.05);
+  border-color: var(--secondary);
+  background: rgba(56, 189, 248, 0.06);
+  box-shadow: 0 8px 20px rgba(56, 189, 248, 0.2);
 }
 
 .workspace-footer {

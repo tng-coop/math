@@ -774,7 +774,7 @@ svg {
 /* Room Navigation Dashboard Tabs */
 .room-nav-tabs {
   display: grid;
-  grid-template-columns: repeat(6, 1fr);
+  grid-template-columns: repeat(10, 1fr);
   gap: 0.5rem;
   width: 100%;
   margin-bottom: 1.25rem;

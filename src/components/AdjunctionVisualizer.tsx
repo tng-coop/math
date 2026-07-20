@@ -30,7 +30,7 @@ export default function AdjunctionVisualizer({ language }: { language: 'en' | 'j
     if (typeof window !== 'undefined') {
       const params = new URLSearchParams(window.location.search);
       const room = parseInt(params.get('room') || '1', 10);
-      return (room >= 1 && room <= 6) ? room : 1;
+      return (room >= 1 && room <= 10) ? room : 1;
     }
     return 1;
   };

@@ -3,6 +3,8 @@ import {
   Play, Pause, RotateCcw, ChevronRight, AlertCircle, Info, Sparkles, BookOpen, Sliders, Square, FastForward, Rewind
 } from 'lucide-react';
 import { roomsData } from '../data/curriculumData';
+import { glossaryDb } from '../data/glossaryData';
+import { inspectorDb } from '../data/inspectorDb';
 
 // ============================================================================
 // Types & AST Definitions
@@ -507,6 +509,10 @@ export default function Hall5Visualizer({ language, onlyVisualizer = false, onNa
   const [isPaused, setIsPaused] = useState<boolean>(false);
   const [activeTab, setActiveTab] = useState<'narrative' | 'rigor' | 'history' | 'exercises'>('narrative');
 
+  // Interactive Duality Inspector states
+  const [hoveredSymbol, setHoveredSymbol] = useState<string | null>(null);
+  const [selectedSymbol, setSelectedSymbol] = useState<string | null>(null);
+
   // Load voices dynamically based on active language selection
   useEffect(() => {
     if (typeof window === 'undefined' || !('speechSynthesis' in window)) return;
@@ -727,29 +733,72 @@ export default function Hall5Visualizer({ language, onlyVisualizer = false, onNa
       
       if (part.startsWith('$$') && part.endsWith('$$')) {
         const isCurrent = currentCharIndex >= partStart && currentCharIndex < partStart + part.length;
+        const formula = part.slice(2, -2);
+        const trimmed = formula.trim();
+        const hasInspector = !!inspectorDb[trimmed];
+        const html = (window as any).katex 
+          ? (window as any).katex.renderToString(formula, { displayMode: true, throwOnError: false }) 
+          : formula;
         return (
           <div 
             key={i} 
-            className={`math-block font-serif text-center my-4 ${isCurrent ? 'text-secondary' : 'text-primary'}`}
-            onClick={() => startSpeech(text, partStart)}
-            style={{ cursor: 'pointer' }}
-            title={language === 'en' ? 'Click to play from here' : 'ここから再生'}
-          >
-            {part.slice(2, -2)}
-          </div>
+            className={`math-block font-serif text-center my-4 ${isCurrent ? 'text-secondary' : 'text-primary'} ${hasInspector ? 'interactive-inspector-term' : ''}`}
+            onMouseEnter={hasInspector ? () => setHoveredSymbol(trimmed) : undefined}
+            onMouseLeave={hasInspector ? () => setHoveredSymbol(null) : undefined}
+            onClick={hasInspector ? (e) => {
+              e.stopPropagation();
+              setSelectedSymbol(prev => prev === trimmed ? null : trimmed);
+              window.dispatchEvent(new CustomEvent('open-sandbox-drawer', { detail: { term: trimmed } }));
+            } : () => startSpeech(text, partStart)}
+            style={{ 
+              cursor: 'pointer',
+              border: hasInspector ? '1px dashed rgba(212,175,55,0.4)' : 'none',
+              borderRadius: hasInspector ? '4px' : '0',
+              padding: hasInspector ? '4px' : '0',
+              transition: 'all 0.2s ease',
+              backgroundColor: hasInspector && (hoveredSymbol === trimmed || selectedSymbol === trimmed) ? 'rgba(212, 175, 55, 0.05)' : 'transparent'
+            }}
+            title={hasInspector 
+              ? (language === 'en' ? 'Hover to inspect, Click to lock/unlock duality' : 'ホバーで双対性表示、クリックで固定/解除') 
+              : (language === 'en' ? 'Click to play from here' : 'ここから再生')
+            }
+            dangerouslySetInnerHTML={{ __html: html }}
+          />
         );
       } else if (part.startsWith('$') && part.endsWith('$')) {
         const isCurrent = currentCharIndex >= partStart && currentCharIndex < partStart + part.length;
+        const formula = part.slice(1, -1);
+        const trimmed = formula.trim();
+        const hasInspector = !!inspectorDb[trimmed];
+        const html = (window as any).katex 
+          ? (window as any).katex.renderToString(formula, { displayMode: false, throwOnError: false }) 
+          : formula;
+        const isActive = (hoveredSymbol === trimmed || selectedSymbol === trimmed);
         return (
           <span 
             key={i} 
-            className={`math-inline font-serif px-0.5 ${isCurrent ? 'word-highlight text-secondary' : 'text-secondary'}`}
-            onClick={() => startSpeech(text, partStart)}
-            style={{ cursor: 'pointer' }}
-            title={language === 'en' ? 'Click to play from here' : 'ここから再生'}
-          >
-            {part.slice(1, -1)}
-          </span>
+            className={`math-inline font-serif px-0.5 ${isCurrent ? 'word-highlight text-secondary' : 'text-secondary'} ${hasInspector ? 'interactive-inspector-term' : ''}`}
+            onMouseEnter={hasInspector ? () => setHoveredSymbol(trimmed) : undefined}
+            onMouseLeave={hasInspector ? () => setHoveredSymbol(null) : undefined}
+            onClick={hasInspector ? (e) => {
+              e.stopPropagation();
+              setSelectedSymbol(prev => prev === trimmed ? null : trimmed);
+              window.dispatchEvent(new CustomEvent('open-sandbox-drawer', { detail: { term: trimmed } }));
+            } : () => startSpeech(text, partStart)}
+            style={{ 
+              cursor: 'pointer',
+              borderBottom: hasInspector ? (isActive ? '2px solid var(--secondary)' : '1px dashed var(--secondary)') : 'none',
+              paddingBottom: hasInspector ? '1px' : '0',
+              backgroundColor: hasInspector && isActive ? 'rgba(212, 175, 55, 0.1)' : 'transparent',
+              transition: 'all 0.2s ease',
+              borderRadius: hasInspector ? '2px' : '0'
+            }}
+            title={hasInspector 
+              ? (language === 'en' ? 'Hover to inspect, Click to lock/unlock duality' : 'ホバーで双対性表示、クリックで固定/解除') 
+              : (language === 'en' ? 'Click to play from here' : 'ここから再生')
+            }
+            dangerouslySetInnerHTML={{ __html: html }}
+          />
         );
       } else {
         const words = getSpokenWords(part, language);
@@ -1157,6 +1206,317 @@ export default function Hall5Visualizer({ language, onlyVisualizer = false, onNa
                 <div className="placard-text" style={{ fontSize: '0.85rem', lineHeight: '1.6', color: 'var(--text-muted)', marginBottom: '1.5rem', minHeight: '140px', whiteSpace: 'pre-line' }}>
                   <p>{renderHighlightedText(tabContent[activeTab])}</p>
                 </div>
+
+                {/* Interactive Duality Inspector Card */}
+                {(() => {
+                  const activeSymbolKey = hoveredSymbol || selectedSymbol;
+                  const activeSymbolData = activeSymbolKey ? inspectorDb[activeSymbolKey] : null;
+                  return (
+                    <div className="duality-inspector-card" style={{
+                      background: activeSymbolData 
+                        ? (activeSymbolData.classification === 'FREE' ? 'rgba(245, 158, 11, 0.05)' : 'rgba(16, 185, 129, 0.05)')
+                        : 'rgba(255, 255, 255, 0.01)',
+                      border: activeSymbolData
+                        ? (activeSymbolData.classification === 'FREE' ? '1px solid rgba(245, 158, 11, 0.3)' : '1px solid rgba(16, 185, 129, 0.3)')
+                        : '1px solid rgba(255, 255, 255, 0.06)',
+                      borderRadius: '8px',
+                      padding: '0.85rem',
+                      marginBottom: '1.5rem',
+                      minHeight: '145px',
+                      transition: 'all 0.3s ease',
+                      boxShadow: activeSymbolData ? '0 4px 20px rgba(0,0,0,0.3)' : 'none'
+                    }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem', flexWrap: 'wrap', gap: '0.4rem' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                          <span style={{ fontSize: '0.65rem', fontWeight: 'bold', color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase' }}>
+                            {language === 'en' ? 'Interactive Duality Inspector' : '双対性インスペクター'}
+                          </span>
+                          {selectedSymbol && (
+                            <button 
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setSelectedSymbol(null);
+                              }}
+                              className="btn-lang"
+                              style={{ 
+                                fontSize: '0.55rem', 
+                                padding: '1px 5px', 
+                                borderRadius: '3px',
+                                background: 'rgba(239, 68, 68, 0.1)', 
+                                color: 'var(--error)', 
+                                border: '1px solid rgba(239, 68, 68, 0.25)',
+                                cursor: 'pointer'
+                              }}
+                              title={language === 'en' ? 'Click to deselect/unlock symbol' : 'クリックで選択・固定解除'}
+                            >
+                              {language === 'en' ? '🔒 Click to Unlock' : '🔒 固定解除'}
+                            </button>
+                          )}
+                        </div>
+                        {activeSymbolData && (
+                          <span style={{
+                            fontSize: '0.55rem',
+                            fontWeight: 'bold',
+                            padding: '2px 8px',
+                            borderRadius: '10px',
+                            background: activeSymbolData.classification === 'FREE' ? 'rgba(245, 158, 11, 0.15)' : 'rgba(16, 185, 129, 0.15)',
+                            color: activeSymbolData.classification === 'FREE' ? '#f59e0b' : '#10b981',
+                            border: activeSymbolData.classification === 'FREE' ? '1px solid rgba(245, 158, 11, 0.3)' : '1px solid rgba(16, 185, 129, 0.3)',
+                          }}>
+                            {activeSymbolData.classification === 'FREE' 
+                              ? (language === 'en' ? 'FREE GENERATION / SYNTAX' : '自由生成 / 構文')
+                              : (language === 'en' ? 'RELATION / COLLAPSE' : '関係式 / 意味の崩壊')}
+                          </span>
+                        )}
+                      </div>
+
+                      {activeSymbolData ? (
+                        <div className="animate-fade-in">
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.5rem' }}>
+                            <span style={{
+                              fontFamily: 'serif',
+                              fontSize: '1.2rem',
+                              fontWeight: 'bold',
+                              color: activeSymbolData.classification === 'FREE' ? '#f59e0b' : '#10b981',
+                              background: 'rgba(0,0,0,0.2)',
+                              padding: '2px 8px',
+                              borderRadius: '4px',
+                              border: '1px solid rgba(255,255,255,0.05)'
+                            }}>
+                              {activeSymbolData.symbol}
+                            </span>
+                            <span style={{ fontSize: '0.8rem', fontWeight: 'bold', color: '#fff' }}>
+                              {language === 'en' ? activeSymbolData.nameEn : activeSymbolData.nameJa}
+                            </span>
+                          </div>
+                          
+                          <div style={{
+                            fontSize: '0.7rem',
+                            fontStyle: 'italic',
+                            color: activeSymbolData.classification === 'FREE' ? '#f59e0b' : '#10b981',
+                            marginBottom: '0.4rem',
+                            opacity: 0.9
+                          }}>
+                            {activeSymbolData.classification === 'FREE'
+                              ? (language === 'en'
+                                ? "This is a generator. It represents the unconstrained creation of raw symbols."
+                                : "「これは生成元です。生の記号の無制約な作成を表します。」")
+                              : (language === 'en'
+                                ? "This is a relation. It represents the collapsing fold that creates semantic meaning."
+                                : "「関係式です。意味論的な意味を生み出す崩壊・折りたたみを表します。」")}
+                          </div>
+
+                          <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '0.75rem', lineHeight: '1.4' }}>
+                            {language === 'en' ? activeSymbolData.descEn : activeSymbolData.descJa}
+                          </p>
+
+                          {activeSymbolData.backlinks.length > 0 && (
+                            <div style={{ borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: '0.5rem', display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+                              <span style={{ fontSize: '0.58rem', color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase' }}>
+                                {language === 'en' ? 'Concept Back-links (Non-sequential Explorer):' : '関連概念バックリンク (非線形探索):'}
+                              </span>
+                              <div style={{ display: 'flex', gap: '0.35rem', flexWrap: 'wrap' }}>
+                                {activeSymbolData.backlinks.map(link => (
+                                  <button
+                                    key={link.roomNum}
+                                    onClick={() => onNavigate && onNavigate(link.roomNum)}
+                                    className="btn-lang"
+                                    style={{ fontSize: '0.6rem', padding: '2px 6px', borderRadius: '3px', background: 'rgba(255,255,255,0.03)' }}
+                                  >
+                                    {language === 'en' ? link.nameEn : link.nameJa}
+                                  </button>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '110px', border: '1px dashed rgba(255,255,255,0.06)', borderRadius: '6px' }}>
+                          <span style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.3)', fontStyle: 'italic', textAlign: 'center', padding: '0 0.5rem' }}>
+                            {language === 'en' 
+                              ? 'Hover or Click a math symbol ($T$, $E(T)$, etc.) in the placard text, Rosetta stone, or glossary to inspect its duality.' 
+                              : '説明文、ロゼッタストーン、解説内の数式記号（$T$, $E(T)$ など）にホバーまたはクリックすると、その双対性が表示されます。'}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })()}
+
+                {/* Duality Rosetta Stone Panel */}
+                {activeRoomData.rosettaStone && (() => {
+                  const rosetta = language === 'en' ? activeRoomData.rosettaStone.en : activeRoomData.rosettaStone.ja;
+                  const hoverMap: Record<number, { generators: string; relations: string }> = {
+                    1: { generators: 'X', relations: 'R' },
+                    2: { generators: 'X', relations: 'R' },
+                    3: { generators: 'X', relations: 'R' },
+                    4: { generators: 'X', relations: 'R' },
+                    5: { generators: 'X', relations: 'R' },
+                    6: { generators: 'X', relations: 'R' },
+                    7: { generators: 'X', relations: 'R' },
+                    8: { generators: 'X', relations: 'R' },
+                    9: { generators: 'X', relations: 'R' },
+                    10: { generators: 'X', relations: 'R' },
+                    11: { generators: 'X', relations: '\\pi' },
+                    12: { generators: '\\text{Diff}(M)', relations: 'g_{\\mu\\nu}' },
+                    13: { generators: '(\\lambda x. M)N', relations: 'M[x \\coloneqq N]' },
+                    14: { generators: 'X', relations: 'R' },
+                    15: { generators: 'X', relations: 'R' },
+                    16: { generators: 'X', relations: 'R' },
+                    17: { generators: 'X', relations: 'R' },
+                    18: { generators: 'X', relations: 'R' },
+                    19: { generators: 'X', relations: 'R' },
+                    20: { generators: 'X', relations: 'R' },
+                    21: { generators: 'X', relations: 'R' },
+                    22: { generators: 'X', relations: 'R' },
+                    23: { generators: 'X', relations: 'R' },
+                    24: { generators: 'X', relations: 'R' },
+                    25: { generators: 'X', relations: 'R' },
+                    26: { generators: 'X', relations: 'R' },
+                    27: { generators: 'X', relations: 'R' },
+                    28: { generators: 'X', relations: 'R' },
+                    29: { generators: 'X', relations: 'R' },
+                    30: { generators: 'X', relations: 'R' }
+                  };
+                  const genSym = hoverMap[activeRoomData.id]?.generators || 'X';
+                  const relSym = hoverMap[activeRoomData.id]?.relations || 'R';
+                  return (
+                    <div className="rosetta-stone-panel text-left" style={{
+                      marginTop: '1.5rem',
+                      marginBottom: '1.5rem',
+                      borderTop: '1px solid rgba(255, 255, 255, 0.08)',
+                      paddingTop: '1.25rem'
+                    }}>
+                      <span style={{
+                        fontSize: '0.7rem',
+                        fontWeight: 'bold',
+                        color: 'var(--primary)',
+                        display: 'block',
+                        marginBottom: '0.6rem',
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.05em'
+                      }}>
+                        {language === 'en' ? 'DUALITY ROSETTA STONE' : '二重性ロゼッタストーン'}
+                      </span>
+                      <div style={{
+                        overflowX: 'auto',
+                        borderRadius: '6px',
+                        border: '1px solid rgba(255, 255, 255, 0.06)',
+                        background: 'rgba(0,0,0,0.15)'
+                      }}>
+                        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.68rem', textAlign: 'left' }}>
+                          <thead>
+                            <tr style={{ background: 'rgba(255, 255, 255, 0.02)', borderBottom: '1px solid rgba(255, 255, 255, 0.06)' }}>
+                              <th style={{ padding: '6px 8px', color: 'rgba(255,255,255,0.4)', fontWeight: 'bold' }}>
+                                {language === 'en' ? 'Core Duality Lens' : '二重性のレンズ'}
+                              </th>
+                              <th style={{ padding: '6px 8px', color: 'rgba(255,255,255,0.4)', fontWeight: 'bold' }}>
+                                {language === 'en' ? 'Lego Child-Analogy' : '子供向けのアナロジー'}
+                              </th>
+                              <th style={{ padding: '6px 8px', color: 'rgba(255,255,255,0.4)', fontWeight: 'bold' }}>
+                                {language === 'en' ? 'Historical / Physical' : '歴史的・物理的技術'}
+                              </th>
+                              <th style={{ padding: '6px 8px', color: 'rgba(255,255,255,0.4)', fontWeight: 'bold' }}>
+                                {language === 'en' ? 'Graduate Category Theory' : '大学院レベル圏論'}
+                              </th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            <tr 
+                              onMouseEnter={() => setHoveredSymbol(genSym)}
+                              onMouseLeave={() => setHoveredSymbol(null)}
+                              onClick={() => setSelectedSymbol(prev => prev === genSym ? null : genSym)}
+                              style={{
+                                borderBottom: '1px solid rgba(255, 255, 255, 0.04)',
+                                background: selectedSymbol === genSym 
+                                  ? 'rgba(245, 158, 11, 0.15)' 
+                                  : (hoveredSymbol === genSym ? 'rgba(245, 158, 11, 0.08)' : 'transparent'),
+                                cursor: 'pointer',
+                                transition: 'background 0.2s'
+                              }}
+                              title={language === 'en' ? 'Click to inspect/lock this concept' : 'クリックで解説を固定表示'}
+                            >
+                              <td style={{ padding: '6px 8px', fontWeight: 'bold', color: 'var(--secondary)' }}>
+                                {rosetta.generators.lens}
+                              </td>
+                              <td style={{ padding: '6px 8px', color: 'rgba(255,255,255,0.8)' }}>
+                                {rosetta.generators.lego}
+                              </td>
+                              <td style={{ padding: '6px 8px', color: 'rgba(255,255,255,0.8)' }}>
+                                {rosetta.generators.tech}
+                              </td>
+                              <td style={{ padding: '6px 8px', color: '#fff', fontFamily: 'serif' }}>
+                                {renderHighlightedText(rosetta.generators.theory)}
+                              </td>
+                            </tr>
+                            <tr 
+                              onMouseEnter={() => setHoveredSymbol(relSym)}
+                              onMouseLeave={() => setHoveredSymbol(null)}
+                              onClick={() => setSelectedSymbol(prev => prev === relSym ? null : relSym)}
+                              style={{
+                                background: selectedSymbol === relSym 
+                                  ? 'rgba(16, 185, 129, 0.15)' 
+                                  : (hoveredSymbol === relSym ? 'rgba(16, 185, 129, 0.08)' : 'transparent'),
+                                cursor: 'pointer',
+                                transition: 'background 0.2s'
+                              }}
+                              title={language === 'en' ? 'Click to inspect/lock this concept' : 'クリックで解説を固定表示'}
+                            >
+                              <td style={{ padding: '6px 8px', fontWeight: 'bold', color: 'var(--success)' }}>
+                                {rosetta.relations.lens}
+                              </td>
+                              <td style={{ padding: '6px 8px', color: 'rgba(255,255,255,0.8)' }}>
+                                {rosetta.relations.lego}
+                              </td>
+                              <td style={{ padding: '6px 8px', color: 'rgba(255,255,255,0.8)' }}>
+                                {rosetta.relations.tech}
+                              </td>
+                              <td style={{ padding: '6px 8px', color: '#fff', fontFamily: 'serif' }}>
+                                {renderHighlightedText(rosetta.relations.theory)}
+                              </td>
+                            </tr>
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  );
+                })()}
+
+                {/* Exhibit Concept Glossary Accordion */}
+                {activeRoomData.glossaryKeys && activeRoomData.glossaryKeys.length > 0 && (
+                  <div className="glossary-accordion" style={{ marginTop: '0rem', marginBottom: '1.5rem', borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: '1.25rem' }}>
+                    <span style={{ fontSize: '0.7rem', fontWeight: 'bold', color: 'var(--secondary)', display: 'block', marginBottom: '0.6rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                      {language === 'en' ? 'Exhibit Concept Glossary:' : '展示概念解説ヘルパー:'}
+                    </span>
+                    <div className="glossary-details-container" style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', maxHeight: '250px', overflowY: 'auto' }}>
+                      {activeRoomData.glossaryKeys.map(key => {
+                        const entry = glossaryDb[key];
+                        if (!entry) return null;
+                        const term = language === 'en' ? entry.termEn : entry.termJa;
+                        const rigor = language === 'en' ? entry.rigorEn : entry.rigorJa;
+                        const analogy = language === 'en' ? entry.analogyEn : entry.analogyJa;
+                        return (
+                          <details key={key} style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '6px', padding: '0.4rem 0.6rem' }}>
+                            <summary 
+                              onClick={() => setSelectedSymbol(prev => prev === key ? null : key)}
+                              style={{ fontSize: '0.75rem', fontWeight: 'bold', color: 'var(--primary)', cursor: 'pointer', outline: 'none', listStyle: 'none' }}
+                            >
+                              <span className="summary-arrow" style={{ color: 'var(--secondary)', marginRight: '0.4rem' }}>▸</span>{renderHighlightedText(term)}
+                            </summary>
+                            <div style={{ marginTop: '0.4rem', fontSize: '0.7rem', color: 'var(--text-muted)', display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
+                              <div>
+                                <strong>{language === 'en' ? 'Rigorous:' : '厳密な定義:'}</strong> {renderHighlightedText(rigor)}
+                              </div>
+                              <div style={{ borderLeft: '2px solid var(--secondary)', paddingLeft: '0.4rem', fontStyle: 'italic', background: 'rgba(212,175,55,0.02)' }}>
+                                <strong>{language === 'en' ? 'Analogy:' : '直感的イメージ:'}</strong> {renderHighlightedText(analogy)}
+                              </div>
+                            </div>
+                          </details>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
 
                 {/* Foundational Concepts Quick Reference */}
                 <div className="tied-foundations" style={{ marginTop: '0rem', marginBottom: '1.5rem', borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: '1rem' }}>

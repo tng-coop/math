@@ -212,11 +212,48 @@ body {
   justify-content: center;
   align-items: center;
   min-height: 0;
-  overflow: hidden;
+  overflow-y: auto;
   box-shadow: 
     inset 0 4px 30px rgba(0, 0, 0, 0.8),
     0 15px 35px -10px rgba(0, 0, 0, 0.9);
 }
+
+.kiosk-panel::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+.kiosk-panel::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.15);
+  border-radius: 3px;
+}
+.kiosk-panel::-webkit-scrollbar-thumb {
+  background: linear-gradient(to bottom, rgba(0, 180, 255, 0.15), rgba(212, 175, 55, 0.15));
+  border-radius: 3px;
+}
+.kiosk-panel::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(to bottom, rgba(0, 180, 255, 0.4), rgba(212, 175, 55, 0.4));
+}
+
+.glossary-details-container {
+  max-height: 250px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+.glossary-details-container::-webkit-scrollbar {
+  width: 4px;
+}
+.glossary-details-container::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.05);
+  border-radius: 2px;
+}
+.glossary-details-container::-webkit-scrollbar-thumb {
+  background: rgba(212, 175, 55, 0.15);
+  border-radius: 2px;
+}
+.glossary-details-container::-webkit-scrollbar-thumb:hover {
+  background: rgba(212, 175, 55, 0.3);
+}
+
 
 /* Audio Guide Device Widget */
 .audio-guide-player {
@@ -823,4 +860,14 @@ svg {
   text-transform: uppercase;
   letter-spacing: 0.08em;
   opacity: 0.85;
+}
+
+/* Rotating Accordion Arrow */
+.summary-arrow {
+  display: inline-block;
+  transition: transform 0.2s ease;
+}
+
+details[open] .summary-arrow {
+  transform: rotate(90deg);
 }

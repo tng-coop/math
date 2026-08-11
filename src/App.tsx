@@ -1,10 +1,17 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import AdjunctionVisualizer from './components/AdjunctionVisualizer';
 import Hall3Visualizer from './components/Hall3Visualizer';
 import Hall5Visualizer from './components/Hall5Visualizer';
-import Hall10Visualizer from './components/Hall10Visualizer';
 import FoundationsVisualizer from './components/FoundationsVisualizer';
 import { roomsData } from './data/curriculumData';
+
+import {
+  FreeGenSandbox,
+  MappingsSandbox,
+  QuotientsSandbox,
+  CategoriesSandbox,
+  AdjunctionSandbox
+} from './components/sandboxes';
 
 const wings = [
   {
@@ -39,6 +46,76 @@ const wings = [
   }
 ];
 
+// Mapping of math symbol terms to their specific sandbox playground
+const termToSandboxMap: Record<string, 'free-gen' | 'mappings' | 'quotients' | 'categories' | 'adjunctions'> = {
+  // Free Gen (Concept I)
+  'X': 'free-gen',
+  'F(X)': 'free-gen',
+  'F_{\\Sigma}(X)': 'free-gen',
+  'X = [0,1]^2': 'free-gen',
+
+  // Mappings (Concept II)
+  'f: A \\to B': 'mappings',
+  '\\text{eval}_v': 'mappings',
+
+  // Quotients (Concept III)
+  'R': 'quotients',
+  '\\langle R \\rangle': 'quotients',
+  'F(X)/\\langle R \\rangle': 'quotients',
+  '\\pi': 'quotients',
+  '\\pi_1(X, x_0)': 'quotients',
+  'X/\\sim': 'quotients',
+  '\\sim_v': 'quotients',
+  '\\text{GROUP BY}': 'quotients',
+  '\\equiv_L': 'quotients',
+
+  // Categories (Concept IV)
+  '\\text{Hom}(-, A)': 'categories',
+
+  // Adjunctions (Concept V)
+  'F \\dashv U': 'adjunctions',
+  '\\eta': 'adjunctions',
+  '\\varepsilon': 'adjunctions'
+};
+
+// Mapping of generic english/japanese words to sandbox
+const wordToSandboxMap: Record<string, 'free-gen' | 'mappings' | 'quotients' | 'categories' | 'adjunctions'> = {
+  'free': 'free-gen',
+  'free generation': 'free-gen',
+  'generator': 'free-gen',
+  'generators': 'free-gen',
+  'injective': 'mappings',
+  'surjective': 'mappings',
+  'bijective': 'mappings',
+  'mapping': 'mappings',
+  'mappings': 'mappings',
+  'function': 'mappings',
+  'functions': 'mappings',
+  'monomorphism': 'mappings',
+  'epimorphism': 'mappings',
+  'isomorphism': 'mappings',
+  'quotient': 'quotients',
+  'quotients': 'quotients',
+  'coequalizer': 'quotients',
+  'equivalence': 'quotients',
+  'category': 'categories',
+  'categories': 'categories',
+  'functor': 'categories',
+  'functors': 'categories',
+  'morphism': 'categories',
+  'morphisms': 'categories',
+  'adjunction': 'adjunctions',
+  'adjunctions': 'adjunctions',
+  '自由生成': 'free-gen',
+  '写像': 'mappings',
+  '関数': 'mappings',
+  '商集合': 'quotients',
+  '同値関係': 'quotients',
+  '圏': 'categories',
+  '関手': 'categories',
+  '随伴': 'adjunctions'
+};
+
 export default function App() {
   const getInitialLanguage = (): 'en' | 'ja' => {
     if (typeof window !== 'undefined') {
@@ -60,6 +137,7 @@ export default function App() {
 
   const [language, setLanguageState] = useState<'en' | 'ja'>(getInitialLanguage);
   const [activeRoom, setActiveRoomState] = useState<number>(getInitialRoom);
+  const [activeSandbox, setActiveSandbox] = useState<'free-gen' | 'mappings' | 'quotients' | 'categories' | 'adjunctions' | null>(null);
 
   const activeWing = wings.find(w => w.rooms.includes(activeRoom)) || wings[0];
 
@@ -82,6 +160,33 @@ export default function App() {
       window.history.replaceState({}, '', newUrl);
     }
   };
+
+  // Register listener for Custom Event to open a sandbox drawer
+  useEffect(() => {
+    const handleOpenDrawer = (e: Event) => {
+      const customEvent = e as CustomEvent<{ term: string }>;
+      const term = customEvent.detail?.term;
+      if (!term) return;
+
+      // 1. Try mapping as strict math symbol
+      let sandboxId = termToSandboxMap[term];
+      
+      // 2. Try mapping as word/tag (lowercase)
+      if (!sandboxId) {
+        const lowerWord = term.toLowerCase().trim();
+        sandboxId = wordToSandboxMap[lowerWord];
+      }
+
+      if (sandboxId) {
+        setActiveSandbox(sandboxId);
+      }
+    };
+
+    window.addEventListener('open-sandbox-drawer', handleOpenDrawer);
+    return () => {
+      window.removeEventListener('open-sandbox-drawer', handleOpenDrawer);
+    };
+  }, []);
 
   return (
     <div className="museum-app">
@@ -146,20 +251,83 @@ export default function App() {
         </div>
       </header>
 
-      {/* Immersive Exhibit Room */}
-      <main className="museum-main-viewport">
-        {activeRoom === 9 ? (
-          <Hall3Visualizer language={language} onlyVisualizer={false} onNavigate={setActiveRoom} />
-        ) : activeRoom === 14 ? (
-          <Hall5Visualizer language={language} onlyVisualizer={false} onNavigate={setActiveRoom} />
-        ) : activeRoom === 25 ? (
-          <Hall10Visualizer language={language} forcedRoom={4} onNavigate={setActiveRoom} />
-        ) : activeRoom >= 26 ? (
-          <FoundationsVisualizer language={language} forcedRoom={activeRoom} onNavigate={setActiveRoom} />
-        ) : (
-          <AdjunctionVisualizer language={language} forcedRoom={activeRoom} onNavigate={setActiveRoom} />
-        )}
-      </main>
+      {/* Main split-screen container */}
+      <div style={{ display: 'flex', flex: 1, overflow: 'hidden', position: 'relative', width: '100%' }}>
+        
+        {/* Left Side: Main Exhibit Viewport */}
+        <div style={{
+          width: activeSandbox ? '50%' : '100%',
+          transition: 'width 0.4s cubic-bezier(0.25, 0.8, 0.25, 1)',
+          display: 'flex',
+          flexDirection: 'column',
+          overflow: 'hidden'
+        }}>
+          <main className="museum-main-viewport">
+            {activeRoom === 9 ? (
+              <Hall3Visualizer language={language} onlyVisualizer={false} onNavigate={setActiveRoom} />
+            ) : activeRoom === 14 ? (
+              <Hall5Visualizer language={language} onlyVisualizer={false} onNavigate={setActiveRoom} />
+            ) : activeRoom >= 26 ? (
+              <FoundationsVisualizer language={language} forcedRoom={activeRoom} onNavigate={setActiveRoom} />
+            ) : (
+              <AdjunctionVisualizer language={language} forcedRoom={activeRoom} onNavigate={setActiveRoom} />
+            )}
+          </main>
+        </div>
+
+        {/* Right Side: Split-screen Sliding Sandbox Overlay */}
+        <div style={{
+          width: activeSandbox ? '50%' : '0%',
+          opacity: activeSandbox ? 1 : 0,
+          pointerEvents: activeSandbox ? 'auto' : 'none',
+          transition: 'all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1)',
+          borderLeft: activeSandbox ? '1.5px solid rgba(245, 158, 11, 0.3)' : '1px solid transparent',
+          background: 'rgba(10, 10, 15, 0.9)',
+          backdropFilter: 'blur(20px)',
+          display: 'flex',
+          flexDirection: 'column',
+          overflow: 'hidden',
+          zIndex: 100
+        }}>
+          {activeSandbox && (
+            <div style={{ display: 'flex', flexDirection: 'column', height: '100%', position: 'relative' }}>
+              {/* Panel Header */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.75rem 1rem', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+                <span style={{ fontSize: '0.65rem', fontWeight: 'bold', color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                  {language === 'en' ? 'Interactive Sandbox Overlay' : '対話型サンドボックス・オーバーレイ'}
+                </span>
+                <button
+                  onClick={() => setActiveSandbox(null)}
+                  style={{
+                    background: 'transparent',
+                    border: '1px solid rgba(255,255,255,0.2)',
+                    color: 'white',
+                    borderRadius: '4px',
+                    padding: '2px 8px',
+                    fontSize: '0.65rem',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s'
+                  }}
+                  onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'var(--primary)'; e.currentTarget.style.color = 'var(--primary)'; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.2)'; e.currentTarget.style.color = 'white'; }}
+                >
+                  {language === 'en' ? 'Close Panel ✕' : '閉じる ✕'}
+                </button>
+              </div>
+
+              {/* Dynamic Sandbox selector */}
+              <div style={{ flex: 1, padding: '1rem', overflowY: 'auto' }}>
+                {activeSandbox === 'free-gen' && <FreeGenSandbox language={language} />}
+                {activeSandbox === 'mappings' && <MappingsSandbox language={language} />}
+                {activeSandbox === 'quotients' && <QuotientsSandbox language={language} />}
+                {activeSandbox === 'categories' && <CategoriesSandbox language={language} />}
+                {activeSandbox === 'adjunctions' && <AdjunctionSandbox language={language} />}
+              </div>
+            </div>
+          )}
+        </div>
+
+      </div>
     </div>
   );
 }

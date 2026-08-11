@@ -5,6 +5,7 @@ import {
   Info
 } from 'lucide-react';
 import { roomsData } from '../data/curriculumData';
+import { glossaryDb } from '../data/glossaryData';
 
 
 
@@ -50,6 +51,7 @@ export default function Hall10Visualizer({ language, forcedRoom, onNavigate }: {
   const [representingObj, setRepresentingObj] = useState<CatObject>('A');
   const [selectedU, setSelectedU] = useState<string>('a1'); // u in X(R)
   const [hoveredAElement, setHoveredAElement] = useState<string | null>(null);
+  const [hoveredSymbol, setHoveredSymbol] = useState<string | null>(null);
 
   // Commutative Diagram Animation states
   const [selectedMorphism, setSelectedMorphism] = useState<string>('f');
@@ -399,6 +401,10 @@ export default function Hall10Visualizer({ language, forcedRoom, onNavigate }: {
       
       if (part.startsWith('$$') && part.endsWith('$$')) {
         const isCurrent = currentCharIndex >= partStart && currentCharIndex < partStart + part.length;
+        const formula = part.slice(2, -2);
+        const html = (window as any).katex 
+          ? (window as any).katex.renderToString(formula, { displayMode: true, throwOnError: false }) 
+          : formula;
         return (
           <div 
             key={i} 
@@ -406,12 +412,15 @@ export default function Hall10Visualizer({ language, forcedRoom, onNavigate }: {
             onClick={() => startSpeech(text, partStart)}
             style={{ cursor: 'pointer' }}
             title={language === 'en' ? 'Click to play from here' : 'ここから再生'}
-          >
-            {part.slice(2, -2)}
-          </div>
+            dangerouslySetInnerHTML={{ __html: html }}
+          />
         );
       } else if (part.startsWith('$') && part.endsWith('$')) {
         const isCurrent = currentCharIndex >= partStart && currentCharIndex < partStart + part.length;
+        const formula = part.slice(1, -1);
+        const html = (window as any).katex 
+          ? (window as any).katex.renderToString(formula, { displayMode: false, throwOnError: false }) 
+          : formula;
         return (
           <span 
             key={i} 
@@ -419,9 +428,8 @@ export default function Hall10Visualizer({ language, forcedRoom, onNavigate }: {
             onClick={() => startSpeech(text, partStart)}
             style={{ cursor: 'pointer' }}
             title={language === 'en' ? 'Click to play from here' : 'ここから再生'}
-          >
-            {part.slice(1, -1)}
-          </span>
+            dangerouslySetInnerHTML={{ __html: html }}
+          />
         );
       } else {
         const words = getSpokenWords(part, language);
@@ -632,7 +640,7 @@ export default function Hall10Visualizer({ language, forcedRoom, onNavigate }: {
                 {language === 'en' ? activeRoomData.nameEn : activeRoomData.nameJa}
               </h3>
               <p className="placard-subtitle">
-                {language === 'en' ? activeRoomData.thesisEn : activeRoomData.thesisJa}
+                {renderHighlightedText(language === 'en' ? activeRoomData.thesisEn : activeRoomData.thesisJa)}
               </p>
 
               {activeRoomData.image && (
@@ -661,6 +669,167 @@ export default function Hall10Visualizer({ language, forcedRoom, onNavigate }: {
               <div className="placard-text" style={{ fontSize: '0.85rem', lineHeight: '1.6', minHeight: '140px', whiteSpace: 'pre-line' }}>
                 {renderHighlightedText(tabContent[activeTab])}
               </div>
+
+              {/* Duality Rosetta Stone Panel */}
+              {activeRoomData.rosettaStone && (() => {
+                const rosetta = language === 'en' ? activeRoomData.rosettaStone.en : activeRoomData.rosettaStone.ja;
+                const hoverMap: Record<number, { generators: string; relations: string }> = {
+                  1: { generators: 'X', relations: 'R' },
+                  2: { generators: 'X', relations: 'R' },
+                  3: { generators: 'X', relations: 'R' },
+                  4: { generators: 'X', relations: 'R' },
+                  5: { generators: 'X', relations: 'R' },
+                  6: { generators: 'X', relations: 'R' },
+                  7: { generators: 'X', relations: 'R' },
+                  8: { generators: 'X', relations: 'R' },
+                  9: { generators: 'X', relations: 'R' },
+                  10: { generators: 'X', relations: 'R' },
+                  11: { generators: 'X', relations: '\\pi' },
+                  12: { generators: '\\text{Diff}(M)', relations: 'g_{\\mu\\nu}' },
+                  13: { generators: '(\\lambda x. M)N', relations: 'M[x \\coloneqq N]' },
+                  14: { generators: 'X', relations: 'R' },
+                  15: { generators: 'X', relations: 'R' },
+                  16: { generators: 'X', relations: 'R' },
+                  17: { generators: 'X', relations: 'R' },
+                  18: { generators: 'X', relations: 'R' },
+                  19: { generators: 'X', relations: 'R' },
+                  20: { generators: 'X', relations: 'R' },
+                  21: { generators: 'X', relations: 'R' },
+                  22: { generators: 'X', relations: 'R' },
+                  23: { generators: 'X', relations: 'R' },
+                  24: { generators: 'X', relations: 'R' },
+                  25: { generators: 'X', relations: 'R' },
+                  26: { generators: 'X', relations: 'R' },
+                  27: { generators: 'X', relations: 'R' },
+                  28: { generators: 'X', relations: 'R' },
+                  29: { generators: 'X', relations: 'R' },
+                  30: { generators: 'X', relations: 'R' }
+                };
+                const genSym = hoverMap[activeRoomData.id]?.generators || 'X';
+                const relSym = hoverMap[activeRoomData.id]?.relations || 'R';
+                return (
+                  <div className="rosetta-stone-panel text-left" style={{
+                    marginTop: '1.5rem',
+                    borderTop: '1px solid rgba(255, 255, 255, 0.08)',
+                    paddingTop: '1.25rem'
+                  }}>
+                    <span style={{
+                      fontSize: '0.7rem',
+                      fontWeight: 'bold',
+                      color: 'var(--primary)',
+                      display: 'block',
+                      marginBottom: '0.6rem',
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.05em'
+                    }}>
+                      {language === 'en' ? 'DUALITY ROSETTA STONE' : '二重性ロゼッタストーン'}
+                    </span>
+                    <div style={{
+                      overflowX: 'auto',
+                      borderRadius: '6px',
+                      border: '1px solid rgba(255, 255, 255, 0.06)',
+                      background: 'rgba(0,0,0,0.15)'
+                    }}>
+                      <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.68rem', textAlign: 'left' }}>
+                        <thead>
+                          <tr style={{ background: 'rgba(255, 255, 255, 0.02)', borderBottom: '1px solid rgba(255, 255, 255, 0.06)' }}>
+                            <th style={{ padding: '6px 8px', color: 'rgba(255,255,255,0.4)', fontWeight: 'bold' }}>
+                              {language === 'en' ? 'Core Duality Lens' : '二重性のレンズ'}
+                            </th>
+                            <th style={{ padding: '6px 8px', color: 'rgba(255,255,255,0.4)', fontWeight: 'bold' }}>
+                              {language === 'en' ? 'Lego Child-Analogy' : '子供向けのアナロジー'}
+                            </th>
+                            <th style={{ padding: '6px 8px', color: 'rgba(255,255,255,0.4)', fontWeight: 'bold' }}>
+                              {language === 'en' ? 'Historical / Physical' : '歴史的・物理的技術'}
+                            </th>
+                            <th style={{ padding: '6px 8px', color: 'rgba(255,255,255,0.4)', fontWeight: 'bold' }}>
+                              {language === 'en' ? 'Graduate Category Theory' : '大学院レベル圏論'}
+                            </th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          <tr 
+                            onMouseEnter={() => setHoveredSymbol(genSym)}
+                            onMouseLeave={() => setHoveredSymbol(null)}
+                            style={{
+                              borderBottom: '1px solid rgba(255, 255, 255, 0.04)',
+                              background: hoveredSymbol === genSym ? 'rgba(245, 158, 11, 0.08)' : 'transparent',
+                              transition: 'background 0.2s'
+                            }}
+                          >
+                            <td style={{ padding: '6px 8px', fontWeight: 'bold', color: 'var(--secondary)' }}>
+                              {rosetta.generators.lens}
+                            </td>
+                            <td style={{ padding: '6px 8px', color: 'rgba(255,255,255,0.8)' }}>
+                              {rosetta.generators.lego}
+                            </td>
+                            <td style={{ padding: '6px 8px', color: 'rgba(255,255,255,0.8)' }}>
+                              {rosetta.generators.tech}
+                            </td>
+                            <td style={{ padding: '6px 8px', color: '#fff', fontFamily: 'serif' }}>
+                              {renderHighlightedText(rosetta.generators.theory)}
+                            </td>
+                          </tr>
+                          <tr 
+                            onMouseEnter={() => setHoveredSymbol(relSym)}
+                            onMouseLeave={() => setHoveredSymbol(null)}
+                            style={{
+                              background: hoveredSymbol === relSym ? 'rgba(16, 185, 129, 0.08)' : 'transparent',
+                              transition: 'background 0.2s'
+                            }}
+                          >
+                            <td style={{ padding: '6px 8px', fontWeight: 'bold', color: 'var(--success)' }}>
+                              {rosetta.relations.lens}
+                            </td>
+                            <td style={{ padding: '6px 8px', color: 'rgba(255,255,255,0.8)' }}>
+                              {rosetta.relations.lego}
+                            </td>
+                            <td style={{ padding: '6px 8px', color: 'rgba(255,255,255,0.8)' }}>
+                              {rosetta.relations.tech}
+                            </td>
+                            <td style={{ padding: '6px 8px', color: '#fff', fontFamily: 'serif' }}>
+                              {renderHighlightedText(rosetta.relations.theory)}
+                            </td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                );
+              })()}
+
+              {/* Exhibit Concept Glossary Accordion */}
+              {activeRoomData.glossaryKeys && activeRoomData.glossaryKeys.length > 0 && (
+                <div className="glossary-accordion" style={{ marginTop: '1.25rem', borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: '1.25rem' }}>
+                  <span style={{ fontSize: '0.7rem', fontWeight: 'bold', color: 'var(--secondary)', display: 'block', marginBottom: '0.6rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                    {language === 'en' ? 'Exhibit Concept Glossary:' : '展示概念解説ヘルパー:'}
+                  </span>
+                  <div className="glossary-details-container" style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', maxHeight: '250px', overflowY: 'auto' }}>
+                    {activeRoomData.glossaryKeys.map(key => {
+                      const entry = glossaryDb[key];
+                      if (!entry) return null;
+                      const term = language === 'en' ? entry.termEn : entry.termJa;
+                      const rigor = language === 'en' ? entry.rigorEn : entry.rigorJa;
+                      const analogy = language === 'en' ? entry.analogyEn : entry.analogyJa;
+                      return (
+                        <details key={key} style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '6px', padding: '0.4rem 0.6rem' }}>
+                          <summary style={{ fontSize: '0.75rem', fontWeight: 'bold', color: 'var(--primary)', cursor: 'pointer', outline: 'none', listStyle: 'none' }}>
+                            <span className="summary-arrow" style={{ color: 'var(--secondary)', marginRight: '0.4rem' }}>▸</span>{renderHighlightedText(term)}
+                          </summary>
+                          <div style={{ marginTop: '0.4rem', fontSize: '0.7rem', color: 'var(--text-muted)', display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
+                            <div>
+                              <strong>{language === 'en' ? 'Rigorous:' : '厳密な定義:'}</strong> {renderHighlightedText(rigor)}
+                            </div>
+                            <div style={{ borderLeft: '2px solid var(--secondary)', paddingLeft: '0.4rem', fontStyle: 'italic', background: 'rgba(212,175,55,0.02)' }}>
+                              <strong>{language === 'en' ? 'Analogy:' : '直感的イメージ:'}</strong> {renderHighlightedText(analogy)}
+                            </div>
+                          </div>
+                        </details>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
 
               {/* Foundational Concepts Quick Reference */}
               <div className="tied-foundations" style={{ marginTop: '1.5rem', borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: '1rem', marginBottom: '1.5rem' }}>

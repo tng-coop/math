@@ -3,6 +3,7 @@ import AdjunctionVisualizer from './components/AdjunctionVisualizer';
 import Hall3Visualizer from './components/Hall3Visualizer';
 import Hall5Visualizer from './components/Hall5Visualizer';
 import FoundationsVisualizer from './components/FoundationsVisualizer';
+import MasterStudioVisualizer from './components/MasterStudioVisualizer';
 import { roomsData } from './data/curriculumData';
 
 import {
@@ -135,7 +136,18 @@ export default function App() {
     return 1;
   };
 
+  const getInitialMode = (): 'studio' | 'museum' => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const modeVal = params.get('mode');
+      if (modeVal === 'museum') return 'museum';
+      if (modeVal === 'studio') return 'studio';
+    }
+    return 'studio';
+  };
+
   const [language, setLanguageState] = useState<'en' | 'ja'>(getInitialLanguage);
+  const [appMode, setAppModeState] = useState<'studio' | 'museum'>(getInitialMode);
   const [activeRoom, setActiveRoomState] = useState<number>(getInitialRoom);
   const [activeSandbox, setActiveSandbox] = useState<'free-gen' | 'mappings' | 'quotients' | 'categories' | 'adjunctions' | null>(null);
 
@@ -151,11 +163,23 @@ export default function App() {
     }
   };
 
+  const setAppMode = (mode: 'studio' | 'museum') => {
+    setAppModeState(mode);
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      params.set('mode', mode);
+      const newUrl = `${window.location.pathname}?${params.toString()}${window.location.hash}`;
+      window.history.replaceState({}, '', newUrl);
+    }
+  };
+
   const setActiveRoom = (roomNum: number) => {
     setActiveRoomState(roomNum);
+    setAppModeState('museum');
     if (typeof window !== 'undefined') {
       const params = new URLSearchParams(window.location.search);
       params.set('exhibit', roomNum.toString());
+      params.set('mode', 'museum');
       const newUrl = `${window.location.pathname}?${params.toString()}${window.location.hash}`;
       window.history.replaceState({}, '', newUrl);
     }
@@ -191,13 +215,52 @@ export default function App() {
   return (
     <div className="museum-app">
       {/* Immersive Museum Status Bar */}
-      <header className="museum-header" style={{ flexDirection: 'column', height: 'auto', padding: '0.75rem 1.5rem', gap: '0.75rem' }}>
+      <header className="museum-header" style={{ flexDirection: 'column', height: 'auto', padding: '0.6rem 1.25rem', gap: '0.5rem' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', alignItems: 'center' }}>
           <div className="museum-header-logo" style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-            <span>MathBasics</span>
-            <span className="museum-header-exhibit" style={{ fontSize: '0.7rem', color: 'var(--primary)', borderLeft: '1px solid rgba(255,255,255,0.15)', paddingLeft: '1rem' }}>
-              {language === 'en' ? activeWing.nameEn : activeWing.nameJa}
-            </span>
+            <span style={{ cursor: 'pointer' }} onClick={() => setAppMode('studio')}>MathBasics</span>
+            
+            {/* Mode Switcher */}
+            <div style={{ display: 'flex', gap: '0.35rem', background: 'rgba(0,0,0,0.4)', padding: '2px', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.1)' }}>
+              <button
+                onClick={() => setAppMode('studio')}
+                style={{
+                  background: appMode === 'studio' ? 'var(--primary)' : 'transparent',
+                  color: appMode === 'studio' ? '#000' : 'rgba(255,255,255,0.7)',
+                  border: 'none',
+                  borderRadius: '4px',
+                  padding: '3px 10px',
+                  fontSize: '0.65rem',
+                  fontWeight: 'bold',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s'
+                }}
+              >
+                ⚡ {language === 'en' ? 'Master Studio (Adjoints & Hom-Sets)' : 'マスタースタジオ（随伴・Hom・構文意味）'}
+              </button>
+              <button
+                onClick={() => setAppMode('museum')}
+                style={{
+                  background: appMode === 'museum' ? 'var(--primary)' : 'transparent',
+                  color: appMode === 'museum' ? '#000' : 'rgba(255,255,255,0.7)',
+                  border: 'none',
+                  borderRadius: '4px',
+                  padding: '3px 10px',
+                  fontSize: '0.65rem',
+                  fontWeight: 'bold',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s'
+                }}
+              >
+                🏛️ {language === 'en' ? '30-Hall Museum Tour' : '30展示室ツアー'}
+              </button>
+            </div>
+
+            {appMode === 'museum' && (
+              <span className="museum-header-exhibit" style={{ fontSize: '0.7rem', color: 'var(--primary)', borderLeft: '1px solid rgba(255,255,255,0.15)', paddingLeft: '0.75rem' }}>
+                {language === 'en' ? activeWing.nameEn : activeWing.nameJa}
+              </span>
+            )}
           </div>
 
           {/* Bilingual Language Switch Pill */}
@@ -218,37 +281,41 @@ export default function App() {
           </div>
         </div>
 
-        {/* Wing Selector Navigation */}
-        <div className="wing-selector-container" style={{ display: 'flex', gap: '0.5rem', width: '100%', overflowX: 'auto', borderBottom: '1px solid rgba(255,255,255,0.06)', paddingBottom: '0.5rem' }}>
-          {wings.map((w) => (
-            <button
-              key={w.id}
-              onClick={() => setActiveRoom(w.rooms[0])}
-              className={`btn-lang ${activeWing.id === w.id ? 'active' : ''}`}
-              style={{ fontSize: '0.65rem', padding: '4px 12px', minWidth: '120px', whiteSpace: 'nowrap', borderRadius: '4px' }}
-            >
-              {language === 'en' ? w.nameEn : w.nameJa}
-            </button>
-          ))}
-        </div>
+        {/* Wing Selector Navigation (Only in Museum mode) */}
+        {appMode === 'museum' && (
+          <>
+            <div className="wing-selector-container" style={{ display: 'flex', gap: '0.5rem', width: '100%', overflowX: 'auto', borderBottom: '1px solid rgba(255,255,255,0.06)', paddingBottom: '0.4rem' }}>
+              {wings.map((w) => (
+                <button
+                  key={w.id}
+                  onClick={() => setActiveRoom(w.rooms[0])}
+                  className={`btn-lang ${activeWing.id === w.id ? 'active' : ''}`}
+                  style={{ fontSize: '0.65rem', padding: '4px 12px', minWidth: '120px', whiteSpace: 'nowrap', borderRadius: '4px' }}
+                >
+                  {language === 'en' ? w.nameEn : w.nameJa}
+                </button>
+              ))}
+            </div>
 
-        {/* Room Selector Navigation */}
-        <div className="room-selector-container" style={{ display: 'flex', gap: '0.3rem', width: '100%', overflowX: 'auto', paddingBottom: '0.25rem' }}>
-          {activeWing.rooms.map((roomNum) => {
-            const rData = roomsData[roomNum];
-            const name = language === 'en' ? rData.nameEn : rData.nameJa;
-            return (
-              <button
-                key={roomNum}
-                onClick={() => setActiveRoom(roomNum)}
-                className={`btn-lang ${activeRoom === roomNum ? 'active' : ''}`}
-                style={{ fontSize: '0.6rem', padding: '3px 8px', whiteSpace: 'nowrap', borderRadius: '3px' }}
-              >
-                {name}
-              </button>
-            );
-          })}
-        </div>
+            {/* Room Selector Navigation */}
+            <div className="room-selector-container" style={{ display: 'flex', gap: '0.3rem', width: '100%', overflowX: 'auto', paddingBottom: '0.2rem' }}>
+              {activeWing.rooms.map((roomNum) => {
+                const rData = roomsData[roomNum];
+                const name = language === 'en' ? rData.nameEn : rData.nameJa;
+                return (
+                  <button
+                    key={roomNum}
+                    onClick={() => setActiveRoom(roomNum)}
+                    className={`btn-lang ${activeRoom === roomNum ? 'active' : ''}`}
+                    style={{ fontSize: '0.6rem', padding: '3px 8px', whiteSpace: 'nowrap', borderRadius: '3px' }}
+                  >
+                    {name}
+                  </button>
+                );
+              })}
+            </div>
+          </>
+        )}
       </header>
 
       {/* Main split-screen container */}
@@ -263,7 +330,14 @@ export default function App() {
           overflow: 'hidden'
         }}>
           <main className="museum-main-viewport">
-            {activeRoom === 9 ? (
+            {appMode === 'studio' ? (
+              <MasterStudioVisualizer 
+                language={language} 
+                onNavigate={(room) => {
+                  setActiveRoom(room);
+                }} 
+              />
+            ) : activeRoom === 9 ? (
               <Hall3Visualizer language={language} onlyVisualizer={false} onNavigate={setActiveRoom} />
             ) : activeRoom === 14 ? (
               <Hall5Visualizer language={language} onlyVisualizer={false} onNavigate={setActiveRoom} />
